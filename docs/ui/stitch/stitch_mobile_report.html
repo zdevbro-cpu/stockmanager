@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StockManager - 보고서 라이브러리</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#197fe6",
+                        "primary-dark": "#1466b8",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111921",
+                        "surface-dark": "#1c252e",
+                        "border-dark": "#2e3b4b",
+                        "text-secondary": "#93adc8",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans", "Noto Sans KR", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hiding for horizontal scroll areas */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            font-family: "Work Sans", "Noto Sans KR", sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex flex-col font-display text-white overflow-x-hidden selection:bg-primary selection:text-white">
+<!-- Top Header -->
+<header class="sticky top-0 z-50 bg-background-dark/95 backdrop-blur-sm border-b border-border-dark">
+<div class="flex items-center justify-between px-4 py-3">
+<h1 class="text-xl font-bold tracking-tight text-white">보고서 라이브러리</h1>
+<div class="flex items-center gap-3">
+<button class="relative p-2 text-text-secondary hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>
+</button>
+</div>
+</div>
+<!-- Search Area -->
+<div class="px-4 pb-4 pt-1">
+<div class="flex gap-2">
+<div class="relative flex-1">
+<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+<span class="material-symbols-outlined text-text-secondary text-[20px]">search</span>
+</div>
+<input class="block w-full p-3 pl-10 text-sm text-white bg-surface-dark border border-border-dark rounded-lg focus:ring-primary focus:border-primary placeholder-text-secondary/70" placeholder="종목명, 코드 또는 키워드 검색" type="text"/>
+</div>
+<button class="flex items-center justify-center w-12 bg-surface-dark border border-border-dark rounded-lg text-text-secondary hover:text-white hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">tune</span>
+</button>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="px-4 pb-4 overflow-x-auto no-scrollbar">
+<div class="flex gap-2">
+<button class="px-4 py-1.5 bg-primary text-white text-sm font-semibold rounded-full border border-primary whitespace-nowrap shadow-[0_0_10px_rgba(25,127,230,0.3)]">
+                    전체
+                </button>
+<button class="px-4 py-1.5 bg-surface-dark text-text-secondary text-sm font-medium rounded-full border border-border-dark hover:bg-[#25303b] hover:border-gray-600 transition-colors whitespace-nowrap">
+                    분석 완료
+                </button>
+<button class="px-4 py-1.5 bg-surface-dark text-text-secondary text-sm font-medium rounded-full border border-border-dark hover:bg-[#25303b] hover:border-gray-600 transition-colors whitespace-nowrap">
+                    분석중
+                </button>
+<button class="px-4 py-1.5 bg-surface-dark text-text-secondary text-sm font-medium rounded-full border border-border-dark hover:bg-[#25303b] hover:border-gray-600 transition-colors whitespace-nowrap">
+                    오류
+                </button>
+</div>
+</div>
+</header>
+<!-- Main List Content -->
+<main class="flex-1 px-4 py-4 pb-24 space-y-3">
+<!-- Table Header / Legend (Subtle visual cue for desktop table feel) -->
+<div class="flex items-center justify-between px-2 pb-1 text-xs font-mono text-text-secondary uppercase tracking-wider">
+<span>종목 / 날짜</span>
+<span class="pr-2">상태 / 액션</span>
+</div>
+<!-- List Item 1: Complete -->
+<div class="group relative flex flex-col bg-surface-dark rounded-lg border border-border-dark overflow-hidden hover:border-primary/50 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
+<div class="p-4 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded bg-[#2e3b4b] flex items-center justify-center shrink-0 border border-border-dark bg-cover bg-center" data-alt="Samsung Electronics logo abstract blue pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBb2t6cHKs3GiF3F9AZboPjk6RjvAiWMZTV80EtgtxkIinCw9AfQJjRg5iKa_yJqfoKIp3EKdFctt0yLP9-ZM-dy2mkHTLBnotzfK-xWmz5l1R5T4WdHgsg-Fo4ky5vUuEqg91Q8oqAT4i6kjGt_EkHS2kM60Tpl6kzVstKb6y4BXMF6cXpARSMTtI6lbWuhOvNucX17PR4XCDO09QWjeex2pjh_XO14Os2mk-XjrEljy5xWvzf_pyToUqnLRJ7sDu6N81uMcXlcQ');"></div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-2">
+<span class="text-base font-bold text-white">삼성전자</span>
+<span class="text-xs font-mono text-text-secondary">005930</span>
+</div>
+<span class="text-xs text-text-secondary mt-0.5 font-mono">2023-10-27 14:30</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                        완료
+                    </span>
+</div>
+</div>
+<!-- Bottom Action Row (Table-like Extension) -->
+<div class="px-4 py-2 bg-[#151c24] border-t border-border-dark flex justify-between items-center">
+<span class="text-xs text-text-secondary">보고서 ID: #R-23910</span>
+<button class="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-dark">
+<span>결과 보기</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- List Item 2: Analyzing -->
+<div class="group relative flex flex-col bg-surface-dark rounded-lg border border-border-dark overflow-hidden hover:border-primary/50 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="p-4 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded bg-[#2e3b4b] flex items-center justify-center shrink-0 border border-border-dark bg-cover bg-center" data-alt="SK Hynix logo abstract pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDn-3BgJ8PLtsqXoI8SfqHMtg4UTgkKsL0UvVcgi8yBAQQ6QrDi28gPYv4yQlgwKDnBr-Cat-mbcRgWb0t_yIUy0rP57PNREKg8pdwtllIggXWiv-MPPWeI4pRmP4fJ7_SNehSdjAQfXsrHk8O1O04Y6XVNOq8SK8gTfPH7McA6CYPE59sMIb8uaPePyi-19QPIbIwrhmUhW8i31Q_dw0E9D4pUm5S1qohdVs5hg9knmLMLFbiQS0RN_v7SLqUPSbgJT7hKog586A');"></div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-2">
+<span class="text-base font-bold text-white">SK하이닉스</span>
+<span class="text-xs font-mono text-text-secondary">000660</span>
+</div>
+<span class="text-xs text-text-secondary mt-0.5 font-mono">2023-10-26 09:15</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20 animate-pulse">
+                        분석중
+                    </span>
+</div>
+</div>
+<div class="px-4 py-2 bg-[#151c24] border-t border-border-dark flex justify-between items-center">
+<span class="text-xs text-text-secondary">진행률: 78%</span>
+<button class="flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-white cursor-not-allowed">
+<span>대기중</span>
+<span class="material-symbols-outlined text-[16px]">hourglass_empty</span>
+</button>
+</div>
+</div>
+<!-- List Item 3: Pending/Waiting -->
+<div class="group relative flex flex-col bg-surface-dark rounded-lg border border-border-dark overflow-hidden hover:border-primary/50 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-500"></div>
+<div class="p-4 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded bg-[#2e3b4b] flex items-center justify-center shrink-0 border border-border-dark bg-cover bg-center" data-alt="Naver logo abstract green pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHzDucS28z-Xmkk4MbAe8U5uu0Sg6v0ZtDSjLwe89QnNluEWpvgNx5Dm8Czs12XRIQo99ZRCjxxzGRW6FmFjOn0KzAoaXxS5MRZXUWc8vbpJ6pnkfoUv1P9WLjY9mMQPc6xitc6eZiSrWKJIp8FYbh7THm_fyPwG1UWsclTuFxuW2zYgO4lj8hhAFxrVnU8x5R8DEN3S5_3NQfTbi2fM89ZGKfLrEqHekm4rN6z65s7-ffpgM83JZb23-CFwiEVT5ItUH3AayCjQ');"></div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-2">
+<span class="text-base font-bold text-white">NAVER</span>
+<span class="text-xs font-mono text-text-secondary">035420</span>
+</div>
+<span class="text-xs text-text-secondary mt-0.5 font-mono">2023-10-25 18:00</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-700/30 text-gray-400 border border-gray-600/30">
+                        대기
+                    </span>
+</div>
+</div>
+<div class="px-4 py-2 bg-[#151c24] border-t border-border-dark flex justify-between items-center">
+<span class="text-xs text-text-secondary">대기열: 3번째</span>
+<button class="flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-white">
+<span>옵션</span>
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- List Item 4: Error -->
+<div class="group relative flex flex-col bg-surface-dark rounded-lg border border-border-dark overflow-hidden hover:border-primary/50 transition-colors opacity-90">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+<div class="p-4 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded bg-[#2e3b4b] flex items-center justify-center shrink-0 border border-border-dark bg-cover bg-center" data-alt="Kakao logo abstract yellow pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC3GG-cZehCncb18qKhdnVtJvtNcf8vx9qGZL4ZiS6D0-iZYb50YXPATppHKTwpcpvK5zcppTSuObPclWJ_ybYLuW-B0nRsHq4aCptdZCqeLyg-s5S7NQ_FUzucSZhBNnctZDUdiRvJrFlHcz-3gdlOoAHatEi2-xzO8eYGvHQhdjMHXXp21dZTdA-2DYzoFBiVMe2BVfNlPedXd_FebVWivRWneA8mouc1zB4ZVPVBBQkITSS5HmTbHxpMtpubMeCt9j1fpdtU-g');"></div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-2">
+<span class="text-base font-bold text-gray-300">카카오</span>
+<span class="text-xs font-mono text-text-secondary">035720</span>
+</div>
+<span class="text-xs text-text-secondary mt-0.5 font-mono">2023-10-24 11:20</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                        오류
+                    </span>
+</div>
+</div>
+<div class="px-4 py-2 bg-[#151c24] border-t border-border-dark flex justify-between items-center">
+<span class="text-xs text-red-400/80">데이터 연결 실패</span>
+<button class="flex items-center gap-1 text-xs font-medium text-white bg-red-500/20 hover:bg-red-500/30 px-2 py-1 rounded border border-red-500/30">
+<span>재시도</span>
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- List Item 5: Complete -->
+<div class="group relative flex flex-col bg-surface-dark rounded-lg border border-border-dark overflow-hidden hover:border-primary/50 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
+<div class="p-4 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded bg-[#2e3b4b] flex items-center justify-center shrink-0 border border-border-dark bg-cover bg-center" data-alt="LG Energy logo abstract pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC28Xi1xpeBP0P7wTgtRlIx681sMqFXb6YaPLmJdj5FyvOD-SA_my-UZS1UZazjKasaeilCuJx0mLBAhcgjvUmo8peX0-38s0xaL4LCd1bslwPHZ1Km-hFgk0oy26vd9y-O1KThJHAZYvwICJHQ_XnZem7cdEpgBTwlh3I2aVP8xDToOzCK65bmDYwWpUNshkoAGS2r8qxybDVbwEpUHXHNSZrWz4t9RTTW3OjU2qSlSh7PPYdXwWsIQHtzhNh4CUUacmroGxZ6Ag');"></div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-2">
+<span class="text-base font-bold text-white">LG에너지솔루션</span>
+<span class="text-xs font-mono text-text-secondary">373220</span>
+</div>
+<span class="text-xs text-text-secondary mt-0.5 font-mono">2023-10-23 08:45</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                        완료
+                    </span>
+</div>
+</div>
+<div class="px-4 py-2 bg-[#151c24] border-t border-border-dark flex justify-between items-center">
+<span class="text-xs text-text-secondary">보고서 ID: #R-23899</span>
+<button class="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-dark">
+<span>결과 보기</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed right-4 bottom-20 h-14 w-14 rounded-full bg-primary text-white shadow-[0_4px_14px_rgba(25,127,230,0.5)] flex items-center justify-center z-40 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[28px]">add_chart</span>
+</button>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-[#111921]/90 backdrop-blur-md border-t border-border-dark z-50 h-16 safe-area-bottom">
+<div class="flex h-full items-center justify-around px-2">
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-text-secondary hover:text-white group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">home</span>
+<span class="text-[10px] font-medium">홈</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-primary group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform filled">description</span>
+<span class="text-[10px] font-medium">라이브러리</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-text-secondary hover:text-white group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">analytics</span>
+<span class="text-[10px] font-medium">분석</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full space-y-1 text-text-secondary hover:text-white group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">person</span>
+<span class="text-[10px] font-medium">MY</span>
+</button>
+</div>
+</nav>
+<!-- Safe area spacing for devices with home indicators -->
+<div class="h-6 bg-[#111921]"></div>
+</body></html>

@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/strategy-definition-2.1.0.json",
+  "title": "StrategyDefinition",
+  "description": "전략 정의(추천 TopN+비중, 타이밍 신호, 상장/비상장 리포트) 스키마 v2.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "strategy", "universe", "features", "scoring", "portfolio", "timing", "reporting", "backtest"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "2.1.0" },
+
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy_id", "name", "created_at", "owner", "mode"],
+      "properties": {
+        "strategy_id": { "type": "string", "pattern": "^[a-zA-Z0-9._-]+$", "minLength": 3, "maxLength": 80 },
+        "name": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "owner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["org", "user"],
+          "properties": {
+            "org": { "type": "string" },
+            "user": { "type": "string" }
+          }
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["paper_signal_only", "paper_with_simulation", "production_signal_only"],
+          "description": "본 프로젝트는 수동주문 전제이므로 production_signal_only 권장"
+        },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "universe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["market_scope", "include_etf_reit", "eligibility", "exclusions"],
+      "properties": {
+        "market_scope": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["KRX_KOSPI", "KRX_KOSDAQ"] },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "include_etf_reit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "notes": { "type": "string" }
+          }
+        },
+        "eligibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min_price_krw", "min_avg_turnover_krw_20d", "min_listing_days", "allow_trading_halt"],
+          "properties": {
+            "min_price_krw": { "type": "number", "minimum": 0, "default": 1000 },
+            "min_avg_turnover_krw_20d": { "type": "number", "minimum": 0, "default": 500000000 },
+            "min_listing_days": { "type": "integer", "minimum": 0, "default": 120 },
+            "allow_trading_halt": { "type": "boolean", "default": false }
+          }
+        },
+        "exclusions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["exclude_delisted", "exclude_management"],
+          "properties": {
+            "exclude_delisted": { "type": "boolean", "default": true },
+            "exclude_management": { "type": "boolean", "default": true },
+            "ticker_whitelist": { "type": "array", "items": { "type": "string" }, "default": [] }
+          }
+        }
+      }
+    },
+
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asof_timezone", "price_features", "fundamental_features", "event_features", "macro_features", "standardization"],
+      "properties": {
+        "asof_timezone": { "type": "string", "default": "Asia/Seoul" },
+
+        "price_features": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/FeatureSpec" }
+        },
+        "fundamental_features": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/FeatureSpec" }
+        },
+        "event_features": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/EventFeatureSpec" }
+        },
+        "macro_features": {
+          "type": "array",
+          "default": [],
+          "items": { "$ref": "#/$defs/MacroFeatureSpec" }
+        },
+        "standardization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "winsorize"],
+          "properties": {
+            "method": { "type": "string", "enum": ["percentile_rank", "zscore"], "default": "percentile_rank" },
+            "winsorize": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["enabled", "p_low", "p_high"],
+              "properties": {
+                "enabled": { "type": "boolean", "default": true },
+                "p_low": { "type": "number", "minimum": 0, "maximum": 0.5, "default": 0.01 },
+                "p_high": { "type": "number", "minimum": 0.5, "maximum": 1, "default": 0.99 }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_type", "weights", "top_n"],
+      "properties": {
+        "model_type": { "type": "string", "enum": ["factor_weighted", "ml_ranking"], "default": "factor_weighted" },
+        "weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["momentum", "trend", "risk_penalty", "liquidity_bonus", "value", "quality"],
+          "properties": {
+            "momentum": { "type": "number", "default": 0.35 },
+            "trend": { "type": "number", "default": 0.25 },
+            "risk_penalty": { "type": "number", "default": 0.25 },
+            "liquidity_bonus": { "type": "number", "default": 0.15 },
+            "value": { "type": "number", "default": 0.0 },
+            "quality": { "type": "number", "default": 0.0 }
+          }
+        },
+        "top_n": { "type": "integer", "minimum": 1, "maximum": 200, "default": 20 },
+        "ml": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model_name": { "type": "string" },
+            "model_version": { "type": "string" },
+            "featureset_version": { "type": "string" },
+            "training_window": { "type": "string" },
+            "label": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "portfolio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["weighting", "constraints", "rebalance"],
+      "properties": {
+        "weighting": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "score_power", "vol_targeting"],
+          "properties": {
+            "method": { "type": "string", "enum": ["equal", "score_proportional", "score_risk_adjusted"], "default": "score_risk_adjusted" },
+            "score_power": { "type": "number", "minimum": 0.1, "maximum": 5, "default": 1.0 },
+            "vol_targeting": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["enabled", "lookback_days"],
+              "properties": {
+                "enabled": { "type": "boolean", "default": true },
+                "lookback_days": { "type": "integer", "minimum": 5, "maximum": 252, "default": 20 }
+              }
+            }
+          }
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_weight_per_name", "max_weight_per_sector", "max_turnover", "min_avg_turnover_krw_20d"],
+          "properties": {
+            "max_weight_per_name": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.10 },
+            "max_weight_per_sector": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.25 },
+            "max_turnover": { "type": "number", "minimum": 0, "maximum": 5, "default": 0.80 },
+            "min_avg_turnover_krw_20d": { "type": "number", "minimum": 0, "default": 500000000 }
+          }
+        },
+        "rebalance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frequency", "execution_price"],
+          "properties": {
+            "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly"], "default": "weekly" },
+            "execution_price": { "type": "string", "enum": ["next_open", "close", "vwap"], "default": "next_open" }
+          }
+        }
+      }
+    },
+
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "horizons", "rules", "event_risk"],
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "horizons": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["1d", "3d", "1w"] },
+          "minItems": 1,
+          "uniqueItems": true,
+          "default": ["1d", "1w"]
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "signal", "priority", "when", "then"],
+            "properties": {
+              "name": { "type": "string" },
+              "signal": { "type": "string", "enum": ["BUY", "WAIT", "REDUCE", "SELL"] },
+              "priority": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
+              "when": { "type": "object", "description": "간단 DSL(예: all/any + gt/lt 등) 또는 룰엔진 표현" },
+              "then": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["confidence", "triggers", "risk_flags"],
+                "properties": {
+                  "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                  "triggers": { "type": "array", "items": { "type": "string" } },
+                  "risk_flags": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "event_risk": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "default_window_days", "default_policy"],
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "default_window_days": { "type": "integer", "minimum": 0, "maximum": 30, "default": 2 },
+            "default_policy": { "type": "string", "enum": ["block_entry", "reduce_size", "no_action"], "default": "block_entry" }
+          }
+        }
+      }
+    },
+
+    "reporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "templates", "citations", "listed_company", "private_company"],
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "templates": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["investment_memo_v1", "investment_memo_vc_v1", "short_brief_v1"] },
+          "default": ["investment_memo_vc_v1"]
+        },
+        "citations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["require_citations", "min_coverage_ratio"],
+          "properties": {
+            "require_citations": { "type": "boolean", "default": true },
+            "min_coverage_ratio": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.6 }
+          }
+        },
+        "listed_company": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sources"],
+          "properties": {
+            "sources": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["DART", "KRX", "KIS", "ECOS"] },
+              "default": ["DART", "KIS", "ECOS"]
+            }
+          }
+        },
+        "private_company": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["inputs", "doc_ingestion"],
+          "properties": {
+            "inputs": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["manual_form", "file_upload", "external_connector"] },
+              "default": ["manual_form", "file_upload"]
+            },
+            "doc_ingestion": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["rag_enabled", "supported_file_types"],
+              "properties": {
+                "rag_enabled": { "type": "boolean", "default": true },
+                "supported_file_types": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "default": ["pdf", "pptx", "xlsx", "docx"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "backtest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "window", "cost_model", "validation"],
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start_date", "end_date"],
+          "properties": {
+            "start_date": { "type": "string", "format": "date" },
+            "end_date": { "type": "string", "format": "date" }
+          }
+        },
+        "cost_model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["commission_rate", "tax_rate_on_sell", "slippage_bps"],
+          "properties": {
+            "commission_rate": { "type": "number", "minimum": 0, "default": 0.00015 },
+            "tax_rate_on_sell": { "type": "number", "minimum": 0, "default": 0.0023 },
+            "slippage_bps": { "type": "number", "minimum": 0, "default": 5 }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["walk_forward", "turnover_sanity_check"],
+          "properties": {
+            "walk_forward": { "type": "boolean", "default": true },
+            "turnover_sanity_check": { "type": "boolean", "default": true }
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "FeatureSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source", "params"],
+      "properties": {
+        "name": { "type": "string" },
+        "source": { "type": "string", "enum": ["KIS", "KRX", "DART", "ECOS", "INTERNAL"] },
+        "params": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "EventFeatureSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source", "window_days", "policy"],
+      "properties": {
+        "name": { "type": "string", "enum": ["earnings", "revision", "rights_issue", "audit_opinion", "litigation", "mna"] },
+        "source": { "type": "string", "enum": ["DART"] },
+        "window_days": { "type": "integer", "minimum": 0, "maximum": 30, "default": 2 },
+        "policy": { "type": "string", "enum": ["block_entry", "reduce_size", "no_action"], "default": "block_entry" }
+      }
+    },
+    "MacroFeatureSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source", "series_code", "transform"],
+      "properties": {
+        "name": { "type": "string" },
+        "source": { "type": "string", "enum": ["ECOS"] },
+        "series_code": { "type": "string" },
+        "transform": { "type": "string", "enum": ["level", "diff", "pct_change", "zscore"], "default": "level" }
+      }
+    }
+  }
+}

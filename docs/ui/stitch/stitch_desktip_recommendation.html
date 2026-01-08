@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StockManager - Recommendations</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1241a1",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "surface-dark": "#1a202c",
+                        "border-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "Noto Sans KR", "sans-serif"],
+                        "body": ["Manrope", "Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for dark theme */
+        .dark ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #111621; 
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #2d3748; 
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #4a5568; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden h-screen flex flex-col">
+<!-- Top Navigation -->
+<header class="flex-none flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 dark:border-[#243047] bg-white dark:bg-[#111722] px-6 py-3 z-20">
+<div class="flex items-center gap-4">
+<div class="size-8 flex items-center justify-center text-primary dark:text-blue-400">
+<span class="material-symbols-outlined text-3xl">candlestick_chart</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">StockManager</h2>
+<!-- Main Nav Links (Desktop) -->
+<nav class="hidden md:flex items-center gap-6 ml-8 text-sm font-medium text-slate-500 dark:text-slate-400">
+<a class="hover:text-primary dark:hover:text-white transition-colors" href="#">Dashboard</a>
+<a class="text-primary dark:text-white" href="#">Recommendations</a>
+<a class="hover:text-primary dark:hover:text-white transition-colors" href="#">Portfolio</a>
+<a class="hover:text-primary dark:hover:text-white transition-colors" href="#">Analysis</a>
+</nav>
+</div>
+<div class="flex items-center justify-end gap-4">
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-slate-100 dark:hover:bg-[#243047] text-slate-500 dark:text-slate-300 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 border border-slate-200 dark:border-[#243047]" data-alt="User profile avatar with abstract gradient" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDyROGJZzV4VZgt74XsMWWA_61kKMFaMgphTiXn91QXbvaqrQXupBtVu_PpFpDIxhwxc7SYQEq07xUoNoVd4OMvk9H9eOIUHYxecjFjfzbkgDsGHV0IP0H6DYHYaQVAtKNniiegJKBDA7LvL2ARpUhuEVYR4UIPcepnVwK7p__4ooSiB7vs4adRniSd25gxgkm-MB3CCRkLjYBpRhXAh5lch9k_M4xewHi7RzG5fJDhLU9gn5MMz75YqwwUrC7h8jEZkKPUsqyX1QE");'>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- Left: Main Content (Table) -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
+<!-- Toolbar & Heading -->
+<div class="flex-none px-6 py-5 flex flex-col gap-5">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Recommendations</h1>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 h-10 bg-primary hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-blue-900/20">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<span>Export</span>
+</button>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="flex flex-wrap items-end gap-4 p-4 bg-white dark:bg-[#1a202c] rounded-lg border border-slate-200 dark:border-[#2d3748] shadow-sm">
+<!-- Strategy Selector -->
+<label class="flex flex-col min-w-[200px] flex-1 md:flex-none">
+<span class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Strategy Model</span>
+<div class="relative">
+<select class="w-full appearance-none bg-slate-50 dark:bg-[#111621] border border-slate-300 dark:border-[#344465] text-slate-900 dark:text-white text-sm rounded-md h-10 pl-3 pr-10 focus:ring-1 focus:ring-primary focus:border-primary">
+<option value="momentum">Momentum Alpha v2.1</option>
+<option value="value">Deep Value Short-Term</option>
+<option value="growth">KOSDAQ Growth Aggressive</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</div>
+</div>
+</label>
+<!-- Date Selector -->
+<label class="flex flex-col min-w-[180px] flex-1 md:flex-none">
+<span class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Target Date</span>
+<div class="relative flex w-full">
+<input class="w-full bg-slate-50 dark:bg-[#111621] border border-slate-300 dark:border-[#344465] text-slate-900 dark:text-white text-sm rounded-l-md h-10 pl-3 focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-400" readonly="" type="text" value="2023-10-27 (Live)"/>
+<div class="bg-slate-100 dark:bg-[#243047] border border-l-0 border-slate-300 dark:border-[#344465] rounded-r-md px-3 flex items-center justify-center text-slate-500 dark:text-slate-300">
+<span class="material-symbols-outlined text-lg">calendar_today</span>
+</div>
+</div>
+</label>
+<div class="hidden md:flex flex-1"></div>
+<!-- Simple Stats -->
+<div class="flex items-center gap-6 text-sm px-2">
+<div class="flex flex-col items-end">
+<span class="text-xs text-slate-500 dark:text-slate-400">Total Recs</span>
+<span class="font-bold text-slate-900 dark:text-white">24</span>
+</div>
+<div class="w-px h-8 bg-slate-200 dark:bg-[#2d3748]"></div>
+<div class="flex flex-col items-end">
+<span class="text-xs text-slate-500 dark:text-slate-400">Avg Target</span>
+<span class="font-bold text-green-500">+4.2%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="flex-1 overflow-y-auto px-6 pb-6">
+<div class="min-w-full inline-block align-middle">
+<div class="border border-slate-200 dark:border-[#2d3748] rounded-lg overflow-hidden bg-white dark:bg-[#1a202c] shadow-sm">
+<table class="min-w-full divide-y divide-slate-200 dark:divide-[#2d3748]">
+<thead class="bg-slate-50 dark:bg-[#243047]">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16" scope="col">Rank</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Ticker / Name</th>
+<th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Target Weight</th>
+<th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Close Price</th>
+<th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Pred. Return</th>
+<th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 dark:divide-[#2d3748] bg-white dark:bg-[#1a202c]">
+<!-- Active Row -->
+<tr class="bg-blue-50/50 dark:bg-primary/10 hover:bg-blue-100/50 dark:hover:bg-primary/20 transition-colors cursor-pointer group">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary dark:text-blue-400">#1</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-8 w-8 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-xs mr-3">
+                                                SE
+                                            </div>
+<div>
+<div class="text-sm font-bold text-slate-900 dark:text-white">Samsung Electronics</div>
+<div class="text-xs text-slate-500 dark:text-slate-400 font-mono">005930.KS</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded text-sm font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
+                                            4.50%
+                                        </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-700 dark:text-slate-300">
+                                        ₩72,100
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold text-green-600 dark:text-green-400 flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                                            +3.2%
+                                        </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-slate-400 hover:text-yellow-400 dark:hover:text-yellow-400 transition-colors">
+<span class="material-symbols-outlined">star_border</span>
+</button>
+<button class="text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-white font-semibold text-xs border border-primary dark:border-blue-400 rounded px-3 py-1.5 bg-blue-50 dark:bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                                                Explain
+                                            </button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-[#243047]/50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-500 dark:text-slate-400">#2</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 flex items-center justify-center font-bold text-xs mr-3">
+                                                SK
+                                            </div>
+<div>
+<div class="text-sm font-bold text-slate-900 dark:text-white">SK Hynix</div>
+<div class="text-xs text-slate-500 dark:text-slate-400 font-mono">000660.KS</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<span class="text-sm font-bold text-slate-900 dark:text-white">4.10%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-700 dark:text-slate-300">
+                                        ₩115,000
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold text-green-600 dark:text-green-400 flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                                            +2.8%
+                                        </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-slate-400 hover:text-yellow-400 dark:hover:text-yellow-400 transition-colors">
+<span class="material-symbols-outlined">star_border</span>
+</button>
+<button class="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-white font-medium text-xs px-3 py-1.5 transition-colors">
+                                                Explain
+                                            </button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-[#243047]/50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-500 dark:text-slate-400">#3</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-8 w-8 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center font-bold text-xs mr-3">
+                                                N
+                                            </div>
+<div>
+<div class="text-sm font-bold text-slate-900 dark:text-white">Naver</div>
+<div class="text-xs text-slate-500 dark:text-slate-400 font-mono">035420.KS</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<span class="text-sm font-bold text-slate-900 dark:text-white">3.80%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-700 dark:text-slate-300">
+                                        ₩210,500
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold text-red-500 dark:text-red-400 flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-sm">trending_down</span>
+                                            -0.5%
+                                        </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-yellow-400 hover:text-yellow-500 transition-colors">
+<span class="material-symbols-outlined font-filled">star</span>
+</button>
+<button class="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-white font-medium text-xs px-3 py-1.5 transition-colors">
+                                                Explain
+                                            </button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-[#243047]/50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-500 dark:text-slate-400">#4</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 flex items-center justify-center font-bold text-xs mr-3">
+                                                LG
+                                            </div>
+<div>
+<div class="text-sm font-bold text-slate-900 dark:text-white">LG Energy Sol</div>
+<div class="text-xs text-slate-500 dark:text-slate-400 font-mono">373220.KS</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<span class="text-sm font-bold text-slate-900 dark:text-white">3.15%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-700 dark:text-slate-300">
+                                        ₩425,000
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold text-green-600 dark:text-green-400 flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                                            +0.2%
+                                        </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-slate-400 hover:text-yellow-400 dark:hover:text-yellow-400 transition-colors">
+<span class="material-symbols-outlined">star_border</span>
+</button>
+<button class="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-white font-medium text-xs px-3 py-1.5 transition-colors">
+                                                Explain
+                                            </button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+<!-- Right: Explain Panel (Overlay/Sidebar) -->
+<!-- Fixed width sidebar for desktop -->
+<aside class="w-[420px] flex-none bg-white dark:bg-[#151b28] border-l border-slate-200 dark:border-[#2d3748] flex flex-col shadow-2xl z-10 overflow-hidden">
+<!-- Header -->
+<div class="p-6 border-b border-slate-200 dark:border-[#2d3748] flex justify-between items-start bg-slate-50/50 dark:bg-[#1a202c]/50">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded">RANK #1</span>
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Samsung Electronics</h2>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold text-slate-900 dark:text-white">₩72,100</span>
+<span class="text-sm font-medium text-green-600 dark:text-green-400">+1.2%</span>
+<span class="text-xs text-slate-500 dark:text-slate-400 ml-1">005930.KS</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-6 space-y-8">
+<!-- AI Summary -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary dark:text-blue-400 text-sm">auto_awesome</span>
+<h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Analysis Summary</h3>
+</div>
+<div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
+<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+                            Strong buy signal driven by recent memory chip price recovery and positive foreign inflow. The stock is currently trading below its 20-day moving average but shows high momentum indicators.
+                        </p>
+</div>
+</section>
+<!-- Classifications -->
+<section>
+<h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Classifications</h3>
+<div class="flex flex-wrap gap-2">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-[#243047] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                             Tech
+                             <span class="material-symbols-outlined text-[10px] mx-1">chevron_right</span>
+                             Semiconductors
+                         </span>
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                             #AI_Hardware
+                         </span>
+<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                             #LargeCap_Value
+                         </span>
+</div>
+</section>
+<!-- Rules Engine -->
+<section>
+<h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Strategy Rules</h3>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex items-center gap-2 p-2 rounded bg-slate-50 dark:bg-[#1a202c] border border-slate-100 dark:border-[#2d3748]">
+<div class="size-5 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<span class="text-xs font-medium text-slate-700 dark:text-slate-300">Liquidity &gt; 50B</span>
+</div>
+<div class="flex items-center gap-2 p-2 rounded bg-slate-50 dark:bg-[#1a202c] border border-slate-100 dark:border-[#2d3748]">
+<div class="size-5 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<span class="text-xs font-medium text-slate-700 dark:text-slate-300">RSI &lt; 70</span>
+</div>
+<div class="flex items-center gap-2 p-2 rounded bg-slate-50 dark:bg-[#1a202c] border border-slate-100 dark:border-[#2d3748]">
+<div class="size-5 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<span class="text-xs font-medium text-slate-700 dark:text-slate-300">Foreign Net Buy</span>
+</div>
+<div class="flex items-center gap-2 p-2 rounded bg-slate-50 dark:bg-[#1a202c] border border-slate-100 dark:border-[#2d3748] opacity-50">
+<div class="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500">
+<span class="material-symbols-outlined text-sm font-bold">remove</span>
+</div>
+<span class="text-xs font-medium text-slate-500">Div Yield &gt; 2%</span>
+</div>
+</div>
+</section>
+<!-- Factor Contribution -->
+<section>
+<div class="flex justify-between items-end mb-4">
+<h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Factor Contribution</h3>
+<span class="text-[10px] text-slate-400">Impact on Rank</span>
+</div>
+<div class="space-y-4">
+<!-- Positive Factor -->
+<div>
+<div class="flex justify-between text-xs mb-1">
+<span class="font-medium text-slate-700 dark:text-slate-300">Foreign Buying</span>
+<span class="font-bold text-green-500">+15.2%</span>
+</div>
+<div class="h-1.5 w-full bg-slate-100 dark:bg-[#243047] rounded-full overflow-hidden">
+<div class="h-full bg-green-500 rounded-full" style="width: 75%"></div>
+</div>
+</div>
+<!-- Positive Factor -->
+<div>
+<div class="flex justify-between text-xs mb-1">
+<span class="font-medium text-slate-700 dark:text-slate-300">P/B Ratio</span>
+<span class="font-bold text-green-500">+8.4%</span>
+</div>
+<div class="h-1.5 w-full bg-slate-100 dark:bg-[#243047] rounded-full overflow-hidden">
+<div class="h-full bg-green-500 rounded-full" style="width: 45%"></div>
+</div>
+</div>
+<!-- Negative Factor -->
+<div>
+<div class="flex justify-between text-xs mb-1">
+<span class="font-medium text-slate-700 dark:text-slate-300">Volatility (14d)</span>
+<span class="font-bold text-red-500">-3.1%</span>
+</div>
+<div class="h-1.5 w-full bg-slate-100 dark:bg-[#243047] rounded-full overflow-hidden">
+<div class="h-full bg-red-500 rounded-full opacity-80" style="width: 15%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Event Risks -->
+<section>
+<h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Upcoming Events</h3>
+<div class="bg-yellow-50 dark:bg-yellow-900/10 border-l-4 border-yellow-400 p-3 rounded-r-md flex gap-3">
+<span class="material-symbols-outlined text-yellow-600 dark:text-yellow-500">warning</span>
+<div>
+<h4 class="text-sm font-bold text-yellow-800 dark:text-yellow-500">Earnings Report</h4>
+<p class="text-xs text-yellow-700 dark:text-yellow-600 mt-0.5">Scheduled for Oct 31, 2023. High volatility expected.</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Panel Footer -->
+<div class="p-4 border-t border-slate-200 dark:border-[#2d3748] bg-slate-50 dark:bg-[#1a202c]">
+<button class="w-full flex justify-center items-center gap-2 bg-[#243047] hover:bg-[#2f3e5b] text-white py-2.5 rounded-lg text-sm font-bold transition-colors">
+<span class="material-symbols-outlined text-lg">add</span>
+                    Add to Watchlist
+                </button>
+</div>
+</aside>
+</div>
+</body></html>

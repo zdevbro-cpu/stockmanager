@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    container_name: stockmanager_db
+    environment:
+      POSTGRES_DB: stockmanager
+      POSTGRES_USER: stockmanager
+      POSTGRES_PASSWORD: stockmanager
+    ports:
+      - "5432:5432"
+    volumes:
+      - stockmanager_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stockmanager -d stockmanager"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  stockmanager_pgdata:

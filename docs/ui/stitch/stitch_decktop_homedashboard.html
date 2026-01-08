@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StockManager Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Manrope -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1241a1",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "card-dark": "#1a2232",
+                        "border-dark": "#243047",
+                        "text-subtle": "#93a5c8"
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white overflow-x-hidden">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-border-dark bg-background-dark px-4 lg:px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-4 lg:gap-8">
+<div class="flex items-center gap-4 text-white">
+<div class="size-8 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-size: 32px;">finance_chip</span>
+</div>
+<h2 class="hidden md:block text-white text-lg font-bold leading-tight tracking-[-0.015em]">StockManager</h2>
+</div>
+<label class="flex flex-col min-w-40 !h-10 max-w-64 hidden md:flex">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-text-subtle flex border-none bg-border-dark items-center justify-center pl-4 rounded-l-lg border-r-0">
+<span class="material-symbols-outlined" style="font-size: 20px;">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-border-dark focus:border-none h-full placeholder:text-text-subtle px-4 rounded-l-none border-l-0 pl-2 text-sm font-normal leading-normal" placeholder="Search ticker..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<div class="hidden lg:flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-text-subtle text-sm font-medium leading-normal hover:text-white transition-colors" href="#">Portfolio</a>
+<a class="text-text-subtle text-sm font-medium leading-normal hover:text-white transition-colors" href="#">Analysis</a>
+<a class="text-text-subtle text-sm font-medium leading-normal hover:text-white transition-colors" href="#">Settings</a>
+</div>
+<div class="flex gap-2">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-border-dark hover:bg-primary/20 transition-colors text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5">
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">notifications</span>
+</button>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-border-dark hover:bg-primary/20 transition-colors text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5">
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Wrapper -->
+<div class="flex flex-1 justify-center py-6 px-4 lg:px-10">
+<div class="flex flex-col max-w-[1400px] flex-1 w-full gap-6">
+<!-- Top Controls & Stats -->
+<div class="flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center">
+<!-- Date & Context -->
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 bg-card-dark border border-border-dark rounded-lg px-4 py-2 cursor-pointer hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-text-subtle">calendar_today</span>
+<span class="text-white font-medium">Oct 24, 2023</span>
+<span class="material-symbols-outlined text-text-subtle">arrow_drop_down</span>
+</div>
+<div class="h-8 w-px bg-border-dark"></div>
+<div class="flex flex-col">
+<span class="text-xs text-text-subtle uppercase font-bold tracking-wider">Market Status</span>
+<div class="flex gap-3 text-sm font-medium">
+<span class="text-green-500">KOSPI 2,500 (+0.5%)</span>
+<span class="text-red-500">KOSDAQ 850 (-0.2%)</span>
+</div>
+</div>
+</div>
+<!-- Quick Stats Cards -->
+<div class="flex flex-wrap gap-4 w-full xl:w-auto">
+<div class="flex min-w-[140px] flex-1 flex-col gap-1 rounded-lg px-5 py-3 border border-border-dark bg-card-dark/50">
+<p class="text-text-subtle text-xs font-medium uppercase tracking-wider">Universe Count</p>
+<p class="text-white text-xl font-bold leading-tight">2,450</p>
+</div>
+<div class="flex min-w-[140px] flex-1 flex-col gap-1 rounded-lg px-5 py-3 border border-border-dark bg-card-dark/50">
+<p class="text-text-subtle text-xs font-medium uppercase tracking-wider">Top Picks</p>
+<p class="text-white text-xl font-bold leading-tight text-primary">10</p>
+</div>
+<div class="flex min-w-[140px] flex-1 flex-col gap-1 rounded-lg px-5 py-3 border border-border-dark bg-card-dark/50">
+<p class="text-text-subtle text-xs font-medium uppercase tracking-wider">Last Updated</p>
+<p class="text-white text-xl font-bold leading-tight">09:30 AM</p>
+</div>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 mt-4">
+<!-- Main Column (Recommendations) -->
+<div class="lg:col-span-8 flex flex-col gap-8">
+<!-- Daily Alpha Picks Section -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h1 class="text-white text-2xl font-bold leading-tight">Daily Alpha Picks</h1>
+<button class="text-primary text-sm font-bold hover:underline">View All History</button>
+</div>
+<div class="flex flex-col overflow-hidden rounded-xl border border-border-dark bg-background-dark shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full min-w-[700px]">
+<thead>
+<tr class="bg-card-dark border-b border-border-dark">
+<th class="px-6 py-4 text-left text-xs font-bold text-text-subtle uppercase tracking-wider w-20">Rank</th>
+<th class="px-6 py-4 text-left text-xs font-bold text-text-subtle uppercase tracking-wider">Ticker</th>
+<th class="px-6 py-4 text-left text-xs font-bold text-text-subtle uppercase tracking-wider">Name</th>
+<th class="px-6 py-4 text-left text-xs font-bold text-text-subtle uppercase tracking-wider">Weight</th>
+<th class="px-6 py-4 text-left text-xs font-bold text-text-subtle uppercase tracking-wider">Trend</th>
+<th class="px-6 py-4 text-right text-xs font-bold text-text-subtle uppercase tracking-wider">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark">
+<!-- Row 1 -->
+<tr class="group hover:bg-card-dark/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center justify-center size-8 rounded-full bg-primary/20 text-primary font-bold text-sm">1</div>
+</td>
+<td class="px-6 py-4 text-text-subtle font-mono text-sm">005930</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-sm">Samsung Electronics</span>
+<span class="text-xs text-text-subtle">Semiconductors</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-white font-bold text-lg">15.5%</span>
+</td>
+<td class="px-6 py-4">
+<svg class="w-24 h-8" fill="none" viewbox="0 0 100 30" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 25 L20 20 L40 22 L60 10 L80 15 L100 5" fill="none" stroke="#10b981" stroke-width="2"></path>
+</svg>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+                                                        Explain
+                                                    </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-card-dark/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center justify-center size-8 rounded-full bg-card-dark border border-border-dark text-text-subtle font-bold text-sm">2</div>
+</td>
+<td class="px-6 py-4 text-text-subtle font-mono text-sm">000660</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-sm">SK Hynix</span>
+<span class="text-xs text-text-subtle">Semiconductors</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-white font-bold text-lg">12.0%</span>
+</td>
+<td class="px-6 py-4">
+<svg class="w-24 h-8" fill="none" viewbox="0 0 100 30" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 28 L20 24 L40 18 L60 20 L80 12 L100 2" fill="none" stroke="#10b981" stroke-width="2"></path>
+</svg>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+                                                        Explain
+                                                    </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-card-dark/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center justify-center size-8 rounded-full bg-card-dark border border-border-dark text-text-subtle font-bold text-sm">3</div>
+</td>
+<td class="px-6 py-4 text-text-subtle font-mono text-sm">035420</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-sm">NAVER</span>
+<span class="text-xs text-text-subtle">Internet Services</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-white font-bold text-lg">8.5%</span>
+</td>
+<td class="px-6 py-4">
+<svg class="w-24 h-8" fill="none" viewbox="0 0 100 30" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 15 L20 20 L40 25 L60 20 L80 22 L100 18" fill="none" stroke="#ef4444" stroke-width="2"></path>
+</svg>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+                                                        Explain
+                                                    </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-card-dark/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center justify-center size-8 rounded-full bg-card-dark border border-border-dark text-text-subtle font-bold text-sm">4</div>
+</td>
+<td class="px-6 py-4 text-text-subtle font-mono text-sm">005380</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-sm">Hyundai Motor</span>
+<span class="text-xs text-text-subtle">Automobiles</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-white font-bold text-lg">7.2%</span>
+</td>
+<td class="px-6 py-4">
+<svg class="w-24 h-8" fill="none" viewbox="0 0 100 30" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 20 L20 18 L40 15 L60 10 L80 8 L100 5" fill="none" stroke="#10b981" stroke-width="2"></path>
+</svg>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+                                                        Explain
+                                                    </button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="group hover:bg-card-dark/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center justify-center size-8 rounded-full bg-card-dark border border-border-dark text-text-subtle font-bold text-sm">5</div>
+</td>
+<td class="px-6 py-4 text-text-subtle font-mono text-sm">051910</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-sm">LG Chem</span>
+<span class="text-xs text-text-subtle">Chemicals</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-white font-bold text-lg">6.0%</span>
+</td>
+<td class="px-6 py-4">
+<svg class="w-24 h-8" fill="none" viewbox="0 0 100 30" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 25 L20 28 L40 20 L60 15 L80 10 L100 12" fill="none" stroke="#10b981" stroke-width="2"></path>
+</svg>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+                                                        Explain
+                                                    </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Watchlist Signals Section -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-white text-xl font-bold leading-tight">Watchlist Signals</h2>
+<button class="text-text-subtle hover:text-white transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Card 1 -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-card-dark border border-border-dark">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-base">KAKAO</span>
+<span class="text-text-subtle text-xs font-mono">035720</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="px-2 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-500 text-xs font-bold uppercase tracking-wide">
+                                            BUY
+                                        </div>
+<div class="px-2 py-1 rounded bg-border-dark text-text-subtle text-xs font-medium">
+                                            Volume Spike
+                                        </div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-card-dark border border-border-dark">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-base">POSCO</span>
+<span class="text-text-subtle text-xs font-mono">005490</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-xs font-bold uppercase tracking-wide">
+                                            WAIT
+                                        </div>
+<div class="px-2 py-1 rounded bg-border-dark text-text-subtle text-xs font-medium">
+                                            Oversold
+                                        </div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-card-dark border border-border-dark">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-base">Celltrion</span>
+<span class="text-text-subtle text-xs font-mono">068270</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="px-2 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-500 text-xs font-bold uppercase tracking-wide">
+                                            BUY
+                                        </div>
+<div class="px-2 py-1 rounded bg-border-dark text-text-subtle text-xs font-medium">
+                                            Golden Cross
+                                        </div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-card-dark border border-border-dark">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-white font-bold text-base">LG Electronics</span>
+<span class="text-text-subtle text-xs font-mono">066570</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="px-2 py-1 rounded bg-gray-500/10 border border-gray-500/20 text-gray-400 text-xs font-bold uppercase tracking-wide">
+                                            HOLD
+                                        </div>
+<div class="px-2 py-1 rounded bg-border-dark text-text-subtle text-xs font-medium">
+                                            Consolidating
+                                        </div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Column -->
+<div class="lg:col-span-4 flex flex-col gap-8">
+<!-- Sector Allocation -->
+<div class="rounded-xl border border-border-dark bg-card-dark p-6">
+<h3 class="text-white text-lg font-bold mb-6">Sector Allocation</h3>
+<div class="flex flex-col items-center justify-center mb-8">
+<!-- Donut Chart Placeholder -->
+<div class="relative size-48 rounded-full" style="background: conic-gradient(#1241a1 0% 35%, #3b82f6 35% 60%, #60a5fa 60% 80%, #93a5c8 80% 100%);">
+<div class="absolute inset-4 bg-card-dark rounded-full flex items-center justify-center flex-col">
+<span class="text-3xl font-bold text-white">100%</span>
+<span class="text-xs text-text-subtle uppercase">Total</span>
+</div>
+</div>
+</div>
+<!-- Legend -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2">
+<div class="size-3 rounded-full bg-primary"></div>
+<span class="text-text-subtle">Semiconductors</span>
+</div>
+<span class="text-white font-bold">35%</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2">
+<div class="size-3 rounded-full bg-blue-500"></div>
+<span class="text-text-subtle">Batteries</span>
+</div>
+<span class="text-white font-bold">25%</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2">
+<div class="size-3 rounded-full bg-blue-400"></div>
+<span class="text-text-subtle">Bio/Pharma</span>
+</div>
+<span class="text-white font-bold">20%</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2">
+<div class="size-3 rounded-full bg-text-subtle"></div>
+<span class="text-text-subtle">Others</span>
+</div>
+<span class="text-white font-bold">20%</span>
+</div>
+</div>
+</div>
+<!-- Theme Heatmap -->
+<div class="rounded-xl border border-border-dark bg-card-dark p-6">
+<h3 class="text-white text-lg font-bold mb-6">Theme Heatmap</h3>
+<div class="flex flex-col gap-6">
+<!-- Theme Item 1 -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center text-sm">
+<span class="text-white font-medium">AI &amp; Robotics</span>
+<span class="text-green-500 font-bold">+2.4%</span>
+</div>
+<div class="w-full h-2 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Theme Item 2 -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center text-sm">
+<span class="text-white font-medium">EV Components</span>
+<span class="text-green-500 font-bold">+1.8%</span>
+</div>
+<div class="w-full h-2 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-blue-500 rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<!-- Theme Item 3 -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center text-sm">
+<span class="text-white font-medium">Superconductors</span>
+<span class="text-red-500 font-bold">-0.5%</span>
+</div>
+<div class="w-full h-2 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-text-subtle rounded-full" style="width: 40%"></div>
+</div>
+</div>
+<!-- Theme Item 4 -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center text-sm">
+<span class="text-white font-medium">Entertainment</span>
+<span class="text-text-subtle font-bold">0.0%</span>
+</div>
+<div class="w-full h-2 bg-border-dark rounded-full overflow-hidden">
+<div class="h-full bg-border-dark rounded-full" style="width: 20%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mini Promotion / Insight -->
+<div class="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/10 p-6">
+<!-- Abstract pattern background -->
+<div class="absolute inset-0 opacity-10" data-alt="abstract radial gradient pattern" style="background-image: radial-gradient(circle at 100% 100%, #ffffff 0%, transparent 50%);"></div>
+<div class="relative z-10">
+<h4 class="text-white font-bold text-lg mb-2">Unlock Premium Insights</h4>
+<p class="text-text-subtle text-sm mb-4">Get deeper analysis on daily alpha picks with our pro plan.</p>
+<button class="w-full bg-white text-primary hover:bg-gray-100 font-bold text-sm py-2 px-4 rounded-lg transition-colors">
+                                    Upgrade Now
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

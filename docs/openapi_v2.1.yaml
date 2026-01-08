@@ -1,0 +1,264 @@
+openapi: 3.0.3
+info:
+  title: StockReco API
+  version: "2.1.0"
+  description: >
+    코스피/코스닥 단기 종목추천(TopN+비중) + 타이밍 신호(수동주문) + 상장/비상장 VC 리포트 생성 시스템 API
+servers:
+  - url: https://api.example.com
+security:
+  - bearerAuth: []
+tags:
+  - name: Universe
+  - name: Recommendations
+  - name: Signals
+  - name: Watchlists
+  - name: Reports
+  - name: Strategies
+  - name: Backtests
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+
+    MarketScope:
+      type: string
+      enum: [KRX_KOSPI, KRX_KOSDAQ, KRX_ETF, KRX_REIT]
+
+    UniverseItem:
+      type: object
+      required: [ticker, name_ko, market]
+      properties:
+        ticker: { type: string }
+        name_ko: { type: string }
+        market: { $ref: "#/components/schemas/MarketScope" }
+        sector_name: { type: string }
+        avg_turnover_krw_20d: { type: number }
+        last_price_krw: { type: number }
+
+    Recommendation:
+      type: object
+      required: [as_of_date, strategy_id, strategy_version, ticker, rank, target_weight]
+      properties:
+        as_of_date: { type: string, format: date }
+        strategy_id: { type: string }
+        strategy_version: { type: string }
+        ticker: { type: string }
+        rank: { type: integer }
+        score: { type: number }
+        target_weight: { type: number, minimum: 0, maximum: 1 }
+        rationale: { type: object, additionalProperties: true }
+
+    TimingSignal:
+      type: object
+      required: [ts, ticker, horizon, signal]
+      properties:
+        ts: { type: string, format: date-time }
+        ticker: { type: string }
+        horizon: { type: string, enum: [1d, 3d, 1w] }
+        signal: { type: string, enum: [BUY, WAIT, REDUCE, SELL] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        triggers: { type: array, items: { type: string } }
+        risk_flags: { type: array, items: { type: string } }
+        model_version: { type: string }
+
+    StrategyDefinition:
+      type: object
+      required: [strategy_id, version, schema_version, json_def]
+      properties:
+        strategy_id: { type: string }
+        version: { type: string }
+        schema_version: { type: string, example: "2.1.0" }
+        name: { type: string }
+        json_def: { type: object, description: strategy-definition-schema-v2.1.0.json에 부합해야 함 }
+
+    BacktestRun:
+      type: object
+      required: [run_id, strategy_id, strategy_version, start_date, end_date]
+      properties:
+        run_id: { type: integer }
+        strategy_id: { type: string }
+        strategy_version: { type: string }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        cost_model: { type: object, additionalProperties: true }
+        metrics: { type: object, additionalProperties: true }
+        artifacts_path: { type: string }
+
+    ReportRequestCreate:
+      type: object
+      required: [company_id, template]
+      properties:
+        company_id: { type: integer }
+        template: { type: string, enum: [investment_memo_v1, investment_memo_vc_v1, short_brief_v1] }
+        as_of_date: { type: string, format: date }
+        params: { type: object, additionalProperties: true }
+
+    ReportRequest:
+      type: object
+      required: [report_id, company_id, template, status]
+      properties:
+        report_id: { type: integer }
+        company_id: { type: integer }
+        template: { type: string }
+        status: { type: string, enum: [PENDING, RUNNING, DONE, FAILED, CANCELED] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ReportArtifact:
+      type: object
+      required: [artifact_id, report_id, format, file_path]
+      properties:
+        artifact_id: { type: integer }
+        report_id: { type: integer }
+        format: { type: string, enum: [pdf, html] }
+        file_path: { type: string }
+        citations: { type: object, additionalProperties: true }
+        created_at: { type: string, format: date-time }
+
+    WatchlistCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+
+    WatchlistItemAdd:
+      type: object
+      required: [ticker]
+      properties:
+        ticker: { type: string }
+
+paths:
+  /universe:
+    get:
+      tags: [Universe]
+      summary: 유니버스 조회(코스피/코스닥, ETF/리츠 확장 옵션)
+      parameters:
+        - in: query
+          name: markets
+          schema:
+            type: array
+            items: { $ref: "#/components/schemas/MarketScope" }
+          explode: true
+        - in: query
+          name: include_etf_reit
+          schema: { type: boolean, default: false }
+        - in: query
+          name: min_price_krw
+          schema: { type: number }
+        - in: query
+          name: min_avg_turnover_krw_20d
+          schema: { type: number }
+        - in: query
+          name: min_listing_days
+          schema: { type: integer }
+        - in: query
+          name: as_of_date
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/UniverseItem" }
+
+  /recommendations:
+    get:
+      tags: [Recommendations]
+      summary: 추천 결과 조회(Top N + 비중)
+      parameters:
+        - in: query
+          name: as_of_date
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: strategy_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: strategy_version
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Recommendation" }
+
+  /signals:
+    get:
+      tags: [Signals]
+      summary: 타이밍 신호 조회(수동주문용)
+      parameters:
+        - in: query
+          name: ticker
+          required: true
+          schema: { type: string }
+        - in: query
+          name: horizon
+          schema: { type: string, enum: [1d, 3d, 1w] }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/TimingSignal" }
+
+  /reports:
+    post:
+      tags: [Reports]
+      summary: 리포트 생성 요청(상장/비상장)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportRequestCreate" }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportRequest" }
+
+  /strategies:
+    post:
+      tags: [Strategies]
+      summary: 전략 등록(전략 정의 JSON 업로드)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StrategyDefinition" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StrategyDefinition" }

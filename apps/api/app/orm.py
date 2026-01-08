@@ -1,0 +1,117 @@
+from __future__ import annotations
+
+from datetime import date, datetime
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import (
+    String, Integer, Float, Date, DateTime, Boolean, ForeignKey, UniqueConstraint, Index, JSON
+)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Security(Base):
+    __tablename__ = "security"
+    ticker: Mapped[str] = mapped_column(String(12), primary_key=True)
+    name_ko: Mapped[str] = mapped_column(String(200))
+    market: Mapped[str] = mapped_column(String(20))  # KRX_KOSPI / KRX_KOSDAQ
+    listed_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
+class ClassificationTaxonomy(Base):
+    __tablename__ = "classification_taxonomy"
+    taxonomy_id: Mapped[str] = mapped_column(String(50), primary_key=True)  # KIS_INDUSTRY, THEME
+    kind: Mapped[str] = mapped_column(String(20))  # INDUSTRY, THEME
+    name: Mapped[str] = mapped_column(String(200))
+    provider: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+
+class ClassificationNode(Base):
+    __tablename__ = "classification_node"
+    taxonomy_id: Mapped[str] = mapped_column(
+        String(50),
+        ForeignKey("classification_taxonomy.taxonomy_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    code: Mapped[str] = mapped_column(String(80), primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    level: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    parent_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    extra: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("idx_class_node_tax_parent", "taxonomy_id", "parent_code"),
+        Index("idx_class_node_tax_level", "taxonomy_id", "level"),
+    )
+
+
+class SecurityClassification(Base):
+    __tablename__ = "security_classification"
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("security.ticker", ondelete="CASCADE"), primary_key=True
+    )
+    taxonomy_id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    code: Mapped[str] = mapped_column(String(80), primary_key=True)
+    effective_from: Mapped[date | None] = mapped_column(Date, primary_key=True, nullable=True)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    effective_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("idx_sec_class_ticker", "ticker"),
+        Index("idx_sec_class_tax_code", "taxonomy_id", "code"),
+    )
+
+
+class PriceDaily(Base):
+    __tablename__ = "price_daily"
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("security.ticker", ondelete="CASCADE"), primary_key=True
+    )
+    trade_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    close: Mapped[float] = mapped_column(Float)
+    volume: Mapped[float | None] = mapped_column(Float, nullable=True)
+    turnover_krw: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    __table_args__ = (Index("idx_price_daily_date", "trade_date"),)
+
+
+class RecommendationRow(Base):
+    __tablename__ = "recommendation"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    as_of_date: Mapped[date] = mapped_column(Date, index=True)
+    strategy_id: Mapped[str] = mapped_column(String(80), index=True)
+    strategy_version: Mapped[str] = mapped_column(String(20), index=True)
+    ticker: Mapped[str] = mapped_column(String(12), ForeignKey("security.ticker", ondelete="CASCADE"), index=True)
+    rank: Mapped[int] = mapped_column(Integer)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    target_weight: Mapped[float] = mapped_column(Float)
+    rationale: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("as_of_date", "strategy_id", "strategy_version", "ticker", name="uq_reco_key"),
+        Index("idx_reco_lookup", "as_of_date", "strategy_id", "strategy_version"),
+    )
+
+
+class TimingSignalRow(Base):
+    __tablename__ = "timing_signal"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    ticker: Mapped[str] = mapped_column(String(12), ForeignKey("security.ticker", ondelete="CASCADE"), index=True)
+    horizon: Mapped[str] = mapped_column(String(10))
+    signal: Mapped[str] = mapped_column(String(10))
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    triggers: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    risk_flags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    __table_args__ = (Index("idx_signal_lookup", "ticker", "horizon", "ts"),)
