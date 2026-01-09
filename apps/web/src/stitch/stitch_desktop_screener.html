@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StockManager - Universe Screener</title>
+<!-- Google Fonts: Manrope -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1241a1",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "panel-dark": "#161b22",
+                        "surface-dark": "#1e2532",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for dark mode data tables */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111621;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #344465;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a5e85;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111518] dark:text-white font-display overflow-hidden flex flex-col h-screen">
+<!-- Top Navigation -->
+<header class="flex-none flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e6e8eb] dark:border-b-[#243047] bg-white dark:bg-[#111621] px-4 lg:px-10 py-3 z-20">
+<div class="flex items-center gap-4 text-[#111518] dark:text-white">
+<div class="size-8 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">candlestick_chart</span>
+</div>
+<h2 class="text-[#111518] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">StockManager</h2>
+</div>
+<!-- Desktop Nav -->
+<div class="hidden lg:flex flex-1 justify-end gap-8">
+<div class="flex items-center gap-9">
+<a class="text-[#111518] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-primary text-sm font-bold leading-normal" href="#">Screener</a>
+<a class="text-[#111518] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Portfolio</a>
+<a class="text-[#111518] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Reports</a>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-[#e6e8eb] dark:border-[#344465]" data-alt="User profile picture showing a professional headshot" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC5jbCqtEveHGoFb-Wu-3wBesEn2NBSHiOH6s0sWY8xBEmiYjFFE73459ykxxidXSTjb7PGnoQAtjkXjRAnccM6oFQATyQbvxydJUjv9cisaLgDuZJBl77CI3CWnLu798TODIuM0m-RVIboVg_oK_kCI0Pt9-kU6CpWuErYYZxjwZYPxdpsZtF0D0Drq8QbbJ-a8EBGpWh7HJldBqSftYx3U5KLvrWJuh2RNRwDv3BlE2NvMe6MLmX0MfBWMji-TC5eNMUG39gYHFw");'></div>
+</div>
+<!-- Mobile Menu Icon -->
+<div class="lg:hidden flex items-center gap-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" data-alt="User profile picture small" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD0ZWwdE__27Lv6PSA8cX_YFC4YR8KVQVhnyGxO3qrLso7iNrBZRrJ6yBeqz9MKmojGWtOd0FLk-qYZqXJWfFymNx8z9zTrvJq5u2GYpPOxceUn9zpu2_CNNXNVfh3zHuJoGKqXh17elNx8WSl8e14w_XDrWD5jxIoQfyJX1eVz0G_XoXZMJ0yZ3G-97kGs_8hjdlsyrU85A-6GaaeX1j9Gqj0jORO0bnMVcFKrlVNkkbXfRRNmeJwkuQX11knkN30eXrgqXYYIrp0");'></div>
+<span class="material-symbols-outlined text-white cursor-pointer">menu</span>
+</div>
+</header>
+<!-- Main Layout -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- Left Sidebar (Filter Panel) - Desktop Sticky -->
+<aside class="hidden lg:flex flex-col w-[340px] border-r border-[#e6e8eb] dark:border-[#243047] bg-white dark:bg-[#161b22] h-full overflow-y-auto z-10">
+<!-- Header -->
+<div class="flex items-center justify-between px-5 pt-6 pb-2">
+<h3 class="text-[#111518] dark:text-white text-lg font-bold leading-tight">Universe Filters</h3>
+<div class="flex gap-2">
+<button class="text-[#637588] dark:text-[#93a5c8] hover:text-primary transition-colors" title="Reset Filters">
+<span class="material-symbols-outlined text-[20px]">restart_alt</span>
+</button>
+<button class="text-[#637588] dark:text-[#93a5c8] hover:text-primary transition-colors" title="Save Preset">
+<span class="material-symbols-outlined text-[20px]">bookmark_add</span>
+</button>
+</div>
+</div>
+<!-- Metric Filters -->
+<div class="px-5 py-4 border-b border-[#e6e8eb] dark:border-[#243047]">
+<label class="block mb-4">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-medium dark:text-gray-200">Min Price (KRW)</span>
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">₩1,000+</span>
+</div>
+<input class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary" max="500000" min="0" step="1000" type="range" value="1000"/>
+<div class="mt-3 flex gap-2">
+<div class="relative w-full">
+<span class="absolute left-3 top-2.5 text-gray-500 text-sm">₩</span>
+<input class="w-full bg-[#f6f6f8] dark:bg-[#0d121c] border border-[#dce0e5] dark:border-[#344465] text-[#111518] dark:text-white text-sm rounded-lg p-2.5 pl-7 focus:ring-primary focus:border-primary block" placeholder="Min" type="number" value="1000"/>
+</div>
+</div>
+</label>
+<label class="block mt-6">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-medium dark:text-gray-200">Min Avg Turnover (20d)</span>
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">1B+</span>
+</div>
+<input class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary" max="1000" min="0" step="10" type="range" value="10"/>
+<div class="mt-3">
+<div class="relative w-full">
+<span class="absolute left-3 top-2.5 text-gray-500 text-sm">₩</span>
+<input class="w-full bg-[#f6f6f8] dark:bg-[#0d121c] border border-[#dce0e5] dark:border-[#344465] text-[#111518] dark:text-white text-sm rounded-lg p-2.5 pl-7 focus:ring-primary focus:border-primary block" placeholder="Amount" type="text" value="1,000,000,000"/>
+</div>
+</div>
+</label>
+</div>
+<!-- Theme Selection -->
+<div class="px-5 py-4 border-b border-[#e6e8eb] dark:border-[#243047]">
+<p class="text-sm font-medium dark:text-gray-200 mb-3">Themes</p>
+<div class="relative mb-3">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+<span class="material-symbols-outlined text-gray-500 text-[18px]">search</span>
+</span>
+<input class="bg-[#f6f6f8] dark:bg-[#0d121c] border border-[#dce0e5] dark:border-[#344465] text-[#111518] dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 p-2.5" placeholder="Search themes (e.g. AI)..." type="text"/>
+</div>
+<div class="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
+<button class="px-3 py-1 rounded-full bg-primary text-white text-xs font-medium border border-primary hover:opacity-90 transition">Semiconductors</button>
+<button class="px-3 py-1 rounded-full bg-[#f6f6f8] dark:bg-[#1e2532] text-[#111518] dark:text-gray-300 border border-[#dce0e5] dark:border-[#344465] text-xs font-medium hover:border-primary hover:text-primary transition">EV Batteries</button>
+<button class="px-3 py-1 rounded-full bg-[#f6f6f8] dark:bg-[#1e2532] text-[#111518] dark:text-gray-300 border border-[#dce0e5] dark:border-[#344465] text-xs font-medium hover:border-primary hover:text-primary transition">AI &amp; Robotics</button>
+<button class="px-3 py-1 rounded-full bg-[#f6f6f8] dark:bg-[#1e2532] text-[#111518] dark:text-gray-300 border border-[#dce0e5] dark:border-[#344465] text-xs font-medium hover:border-primary hover:text-primary transition">Shipbuilding</button>
+<button class="px-3 py-1 rounded-full bg-[#f6f6f8] dark:bg-[#1e2532] text-[#111518] dark:text-gray-300 border border-[#dce0e5] dark:border-[#344465] text-xs font-medium hover:border-primary hover:text-primary transition">Defense</button>
+</div>
+</div>
+<!-- Industry Taxonomy -->
+<div class="flex-1 px-5 py-4 overflow-y-auto">
+<p class="text-sm font-medium dark:text-gray-200 mb-3">Industry</p>
+<div class="flex flex-col gap-2">
+<details class="group">
+<summary class="flex cursor-pointer items-center justify-between rounded-lg bg-[#f6f6f8] dark:bg-[#1e2532] px-3 py-2 text-sm font-medium text-[#111518] dark:text-white hover:bg-gray-200 dark:hover:bg-[#2a3441] transition-colors">
+<span>Manufacturing</span>
+<span class="material-symbols-outlined text-[18px] transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="mt-1 flex flex-col gap-1 pl-4 border-l border-[#dce0e5] dark:border-[#344465] ml-2">
+<label class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<input class="rounded border-gray-600 bg-transparent text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-600 dark:text-gray-400">Chemicals</span>
+</label>
+<label class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<input checked="" class="rounded border-gray-600 bg-transparent text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-600 dark:text-gray-400">Electronics</span>
+</label>
+</div>
+</details>
+<details class="group" open="">
+<summary class="flex cursor-pointer items-center justify-between rounded-lg bg-[#f6f6f8] dark:bg-[#1e2532] px-3 py-2 text-sm font-medium text-[#111518] dark:text-white hover:bg-gray-200 dark:hover:bg-[#2a3441] transition-colors">
+<span>IT &amp; Software</span>
+<span class="material-symbols-outlined text-[18px] transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="mt-1 flex flex-col gap-1 pl-4 border-l border-[#dce0e5] dark:border-[#344465] ml-2">
+<label class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<input class="rounded border-gray-600 bg-transparent text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-600 dark:text-gray-400">Platforms</span>
+</label>
+<label class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<input class="rounded border-gray-600 bg-transparent text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-600 dark:text-gray-400">Gaming</span>
+</label>
+<label class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<input checked="" class="rounded border-gray-600 bg-transparent text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-600 dark:text-gray-400">Cloud Services</span>
+</label>
+</div>
+</details>
+<details class="group">
+<summary class="flex cursor-pointer items-center justify-between rounded-lg bg-[#f6f6f8] dark:bg-[#1e2532] px-3 py-2 text-sm font-medium text-[#111518] dark:text-white hover:bg-gray-200 dark:hover:bg-[#2a3441] transition-colors">
+<span>Pharma &amp; Bio</span>
+<span class="material-symbols-outlined text-[18px] transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+</details>
+</div>
+</div>
+<!-- Sticky Bottom Action -->
+<div class="mt-auto p-5 border-t border-[#e6e8eb] dark:border-[#243047] bg-white dark:bg-[#161b22]">
+<button class="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-sm transition-colors">
+                    Apply Filters
+                    <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono">124</span>
+</button>
+</div>
+</aside>
+<!-- Right Content Area (Results) -->
+<main class="flex-1 flex flex-col h-full bg-[#f6f6f8] dark:bg-[#0b0e14] relative z-0">
+<!-- Results Header / Toolbar -->
+<div class="flex-none flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 lg:px-8 py-5 border-b border-[#e6e8eb] dark:border-[#243047] bg-white dark:bg-[#111621]">
+<div>
+<h1 class="text-xl font-bold text-[#111518] dark:text-white mb-1">Results</h1>
+<p class="text-sm text-gray-500 dark:text-gray-400">124 stocks match your criteria</p>
+</div>
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<!-- Mobile Filter Toggle -->
+<button class="lg:hidden flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 h-10 rounded-lg bg-[#f0f2f5] dark:bg-[#1e2532] text-[#111518] dark:text-white text-sm font-medium hover:bg-gray-200 dark:hover:bg-[#2a3441] border border-transparent dark:border-[#344465]">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                        Filters
+                    </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 h-10 rounded-lg bg-[#f0f2f5] dark:bg-[#1e2532] text-[#111518] dark:text-white text-sm font-medium hover:bg-gray-200 dark:hover:bg-[#2a3441] border border-transparent dark:border-[#344465]">
+<span class="material-symbols-outlined text-[20px]">download</span>
+                        Export
+                    </button>
+<div class="hidden sm:flex rounded-lg bg-[#f0f2f5] dark:bg-[#1e2532] p-1 border border-transparent dark:border-[#344465]">
+<button class="p-1.5 rounded bg-white dark:bg-[#2c3b55] text-primary shadow-sm">
+<span class="material-symbols-outlined text-[20px]">table_rows</span>
+</button>
+<button class="p-1.5 rounded hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Table Container -->
+<div class="flex-1 overflow-auto w-full px-4 lg:px-8 py-6">
+<div class="min-w-full inline-block align-middle">
+<div class="border rounded-xl border-[#e6e8eb] dark:border-[#243047] overflow-hidden bg-white dark:bg-[#161b22] shadow-sm">
+<table class="min-w-full divide-y divide-[#e6e8eb] dark:divide-[#243047]">
+<thead class="bg-[#fcfcfd] dark:bg-[#1e2532]">
+<tr>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[100px]" scope="col">Ticker</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" scope="col">Name</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[120px]" scope="col">Market</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell" scope="col">Sector</th>
+<th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary group" scope="col">
+<div class="flex items-center justify-end gap-1">
+                                            Last Price
+                                            <span class="material-symbols-outlined text-[16px] text-gray-400 group-hover:text-primary">unfold_more</span>
+</div>
+</th>
+<th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-primary group hidden sm:table-cell" scope="col">
+<div class="flex items-center justify-end gap-1">
+                                            Avg T/O (20d)
+                                            <span class="material-symbols-outlined text-[16px] text-primary">arrow_downward</span>
+</div>
+</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#e6e8eb] dark:divide-[#243047] bg-white dark:bg-[#161b22]">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 cursor-pointer transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">005930</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3 text-primary font-bold text-xs">SE</div>
+<div>
+<div class="text-sm font-bold text-[#111518] dark:text-white group-hover:text-primary">Samsung Elec</div>
+<div class="text-xs text-gray-500 dark:text-gray-500 md:hidden">Technology</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">KOSPI</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-[#111518] dark:text-gray-300 hidden md:table-cell">
+                                        Technology
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium text-[#111518] dark:text-white">
+                                        ₩72,800
+                                        <span class="block text-xs text-green-500">+1.2%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-[#111518] dark:text-gray-300 hidden sm:table-cell">
+                                        ₩854B
+                                    </td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 cursor-pointer transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">000660</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mr-3 text-orange-600 dark:text-orange-400 font-bold text-xs">SK</div>
+<div>
+<div class="text-sm font-bold text-[#111518] dark:text-white group-hover:text-primary">SK Hynix</div>
+<div class="text-xs text-gray-500 dark:text-gray-500 md:hidden">Technology</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">KOSPI</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-[#111518] dark:text-gray-300 hidden md:table-cell">
+                                        Technology
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium text-[#111518] dark:text-white">
+                                        ₩134,500
+                                        <span class="block text-xs text-red-400">-0.5%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-[#111518] dark:text-gray-300 hidden sm:table-cell">
+                                        ₩320B
+                                    </td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 cursor-pointer transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">247540</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-3 text-purple-600 dark:text-purple-400 font-bold text-xs">EP</div>
+<div>
+<div class="text-sm font-bold text-[#111518] dark:text-white group-hover:text-primary">Ecopro BM</div>
+<div class="text-xs text-gray-500 dark:text-gray-500 md:hidden">Materials</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-[#2e3646] text-blue-200 border border-blue-500/30">KOSDAQ</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-[#111518] dark:text-gray-300 hidden md:table-cell">
+                                        Materials
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium text-[#111518] dark:text-white">
+                                        ₩285,000
+                                        <span class="block text-xs text-green-500">+4.2%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-[#111518] dark:text-gray-300 hidden sm:table-cell">
+                                        ₩150B
+                                    </td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-primary/5 cursor-pointer transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">035420</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3 text-green-600 dark:text-green-400 font-bold text-xs">NV</div>
+<div>
+<div class="text-sm font-bold text-[#111518] dark:text-white group-hover:text-primary">NAVER</div>
+<div class="text-xs text-gray-500 dark:text-gray-500 md:hidden">Services</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">KOSPI</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-[#111518] dark:text-gray-300 hidden md:table-cell">
+                                        Services
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium text-[#111518] dark:text-white">
+                                        ₩205,500
+                                        <span class="block text-xs text-gray-500">0.0%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-[#111518] dark:text-gray-300 hidden sm:table-cell">
+                                        ₩89B
+                                    </td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-primary/5 cursor-pointer transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">005380</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mr-3 text-indigo-600 dark:text-indigo-400 font-bold text-xs">HY</div>
+<div>
+<div class="text-sm font-bold text-[#111518] dark:text-white group-hover:text-primary">Hyundai Motor</div>
+<div class="text-xs text-gray-500 dark:text-gray-500 md:hidden">Auto</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">KOSPI</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-[#111518] dark:text-gray-300 hidden md:table-cell">
+                                        Automotive
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium text-[#111518] dark:text-white">
+                                        ₩184,300
+                                        <span class="block text-xs text-green-500">+0.8%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-[#111518] dark:text-gray-300 hidden sm:table-cell">
+                                        ₩112B
+                                    </td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-primary/5 cursor-pointer transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">035720</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mr-3 text-yellow-700 dark:text-yellow-400 font-bold text-xs">KK</div>
+<div>
+<div class="text-sm font-bold text-[#111518] dark:text-white group-hover:text-primary">Kakao</div>
+<div class="text-xs text-gray-500 dark:text-gray-500 md:hidden">Services</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300">KOSPI</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-[#111518] dark:text-gray-300 hidden md:table-cell">
+                                        Services
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium text-[#111518] dark:text-white">
+                                        ₩48,500
+                                        <span class="block text-xs text-red-500">-1.1%</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-mono text-[#111518] dark:text-gray-300 hidden sm:table-cell">
+                                        ₩56B
+                                    </td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination -->
+<div class="bg-white dark:bg-[#161b22] px-4 py-3 border-t border-[#e6e8eb] dark:border-[#243047] sm:px-6">
+<div class="flex items-center justify-between">
+<div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+<div>
+<p class="text-sm text-gray-700 dark:text-gray-400">
+                                            Showing <span class="font-medium text-[#111518] dark:text-white">1</span> to <span class="font-medium text-[#111518] dark:text-white">6</span> of <span class="font-medium text-[#111518] dark:text-white">124</span> results
+                                        </p>
+</div>
+<div>
+<nav aria-label="Pagination" class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+<a class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-[#dce0e5] dark:border-[#344465] bg-white dark:bg-[#1e2532] text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2a3441]" href="#">
+<span class="sr-only">Previous</span>
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</a>
+<a aria-current="page" class="z-10 bg-primary/10 border-primary text-primary relative inline-flex items-center px-4 py-2 border text-sm font-bold" href="#">1</a>
+<a class="bg-white dark:bg-[#1e2532] border-[#dce0e5] dark:border-[#344465] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2a3441] relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">2</a>
+<a class="bg-white dark:bg-[#1e2532] border-[#dce0e5] dark:border-[#344465] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2a3441] relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">3</a>
+<span class="relative inline-flex items-center px-4 py-2 border border-[#dce0e5] dark:border-[#344465] bg-white dark:bg-[#1e2532] text-sm font-medium text-gray-700 dark:text-gray-500">...</span>
+<a class="bg-white dark:bg-[#1e2532] border-[#dce0e5] dark:border-[#344465] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2a3441] relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">12</a>
+<a class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-[#dce0e5] dark:border-[#344465] bg-white dark:bg-[#1e2532] text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2a3441]" href="#">
+<span class="sr-only">Next</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Mobile simple pagination -->
+<div class="flex items-center justify-between w-full sm:hidden">
+<button class="relative inline-flex items-center px-4 py-2 border border-[#dce0e5] dark:border-[#344465] text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1e2532] hover:bg-gray-50">Previous</button>
+<button class="ml-3 relative inline-flex items-center px-4 py-2 border border-[#dce0e5] dark:border-[#344465] text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1e2532] hover:bg-gray-50">Next</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Detail Drawer Overlay (Simulating visually as if open for one row, or just hidden structure) -->
+<!-- Ideally hidden by default, shown here as structure example. Adding 'hidden' class to hide it initially. remove 'hidden' to see it. -->
+<div aria-labelledby="slide-over-title" aria-modal="true" class="fixed inset-0 z-50 hidden" role="dialog">
+<div class="fixed inset-0 bg-gray-900/75 transition-opacity"></div>
+<div class="fixed inset-0 overflow-hidden">
+<div class="absolute inset-0 overflow-hidden">
+<div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+<div class="pointer-events-auto w-screen max-w-md">
+<div class="flex h-full flex-col overflow-y-scroll bg-[#161b22] shadow-xl border-l border-[#243047]">
+<div class="px-4 py-6 sm:px-6 border-b border-[#243047]">
+<div class="flex items-start justify-between">
+<div>
+<h2 class="text-xl font-bold leading-6 text-white" id="slide-over-title">Samsung Electronics</h2>
+<p class="text-sm text-gray-400 mt-1">005930 • KOSPI</p>
+</div>
+<div class="ml-3 flex h-7 items-center">
+<button class="relative rounded-md text-gray-400 hover:text-white focus:outline-none" type="button">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+<div class="mt-4 flex gap-2">
+<span class="inline-flex items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-400/30">Technology</span>
+<span class="inline-flex items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs font-medium text-purple-400 ring-1 ring-inset ring-purple-400/30">Semiconductors</span>
+</div>
+</div>
+<div class="relative flex-1 px-4 py-6 sm:px-6 text-white">
+<!-- Drawer Content Placeholder -->
+<p class="mb-4 text-sm text-gray-300">Detailed financial metrics and AI-driven signals would appear here.</p>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-[#1e2532] p-3 rounded-lg">
+<p class="text-xs text-gray-500 uppercase">P/E Ratio</p>
+<p class="text-lg font-mono font-bold">15.4x</p>
+</div>
+<div class="bg-[#1e2532] p-3 rounded-lg">
+<p class="text-xs text-gray-500 uppercase">Div Yield</p>
+<p class="text-lg font-mono font-bold">2.1%</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 mt-auto">
+<button class="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+<span class="material-symbols-outlined text-[18px]">add</span> Add to Watchlist
+                                    </button>
+<button class="flex w-full items-center justify-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-white/20">
+                                        View Full Analysis
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

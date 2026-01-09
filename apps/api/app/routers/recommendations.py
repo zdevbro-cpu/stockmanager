@@ -14,21 +14,23 @@ router = APIRouter(tags=["Recommendations"])
 
 @router.get("/recommendations")
 def get_recommendations(
-    as_of_date: str,
-    strategy_id: str,
-    strategy_version: str,
-    _user=Depends(get_current_user),
+    as_of_date: str | None = None,
+    strategy_id: str | None = None,
+    strategy_version: str | None = None,
+    # _user=Depends(get_current_user), # Temporarily disabled for dev
     db: Session = Depends(get_db),
 ):
-    asof = dt_date.fromisoformat(as_of_date)
+    stmt = select(RecommendationRow)
+    if as_of_date:
+        asof = dt_date.fromisoformat(as_of_date)
+        stmt = stmt.where(RecommendationRow.as_of_date == asof)
+    if strategy_id:
+        stmt = stmt.where(RecommendationRow.strategy_id == strategy_id)
+    if strategy_version:
+        stmt = stmt.where(RecommendationRow.strategy_version == strategy_version)
+        
     rows = db.execute(
-        select(RecommendationRow)
-        .where(
-            RecommendationRow.as_of_date == asof,
-            RecommendationRow.strategy_id == strategy_id,
-            RecommendationRow.strategy_version == strategy_version,
-        )
-        .order_by(RecommendationRow.rank.asc())
+        stmt.order_by(RecommendationRow.rank.asc()).limit(50)
     ).scalars().all()
 
     return {"items": [

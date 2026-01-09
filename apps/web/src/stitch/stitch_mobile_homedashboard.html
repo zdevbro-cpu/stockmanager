@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StockManager Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2a6f63",
+                        "primary-dark": "#1f564d",
+                        "accent-green": "#0bda4d",
+                        "accent-red": "#ff5252",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#141e1c",
+                        "surface-dark": "#1c2625",
+                        "surface-card": "#23302d",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased min-h-screen pb-24 selection:bg-primary selection:text-white">
+<!-- Header -->
+<header class="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-white/5 px-4 py-3 flex items-center justify-between">
+<div>
+<h1 class="text-xl font-extrabold tracking-tight text-primary dark:text-white">StockManager</h1>
+<p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Oct 24, 2023</p>
+</div>
+<button class="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-gray-700 dark:text-white" style="font-size: 24px;">notifications</span>
+<span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-accent-red ring-2 ring-white dark:ring-background-dark"></span>
+</button>
+</header>
+<!-- Scrollable Stats Row -->
+<section class="mt-4 px-4 w-full overflow-x-auto hide-scrollbar">
+<div class="flex gap-3 min-w-max">
+<!-- KOSPI Card -->
+<div class="flex flex-col justify-between w-40 p-4 rounded-xl bg-surface-card border border-white/5 shadow-lg">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-gray-400 uppercase tracking-wider">KOSPI</span>
+<span class="material-symbols-outlined text-primary text-[18px]">show_chart</span>
+</div>
+<div>
+<p class="text-xl font-bold tracking-tight">2,456.32</p>
+<p class="text-sm font-semibold text-accent-green flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> 0.85%
+                    </p>
+</div>
+</div>
+<!-- KOSDAQ Card -->
+<div class="flex flex-col justify-between w-40 p-4 rounded-xl bg-surface-card border border-white/5 shadow-lg">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-gray-400 uppercase tracking-wider">KOSDAQ</span>
+<span class="material-symbols-outlined text-primary text-[18px]">show_chart</span>
+</div>
+<div>
+<p class="text-xl font-bold tracking-tight">821.50</p>
+<p class="text-sm font-semibold text-accent-green flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> 1.20%
+                    </p>
+</div>
+</div>
+<!-- USD/KRW Card -->
+<div class="flex flex-col justify-between w-40 p-4 rounded-xl bg-surface-card border border-white/5 shadow-lg">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-gray-400 uppercase tracking-wider">USD/KRW</span>
+<span class="material-symbols-outlined text-gray-500 text-[18px]">currency_exchange</span>
+</div>
+<div>
+<p class="text-xl font-bold tracking-tight">1,340.50</p>
+<p class="text-sm font-semibold text-accent-red flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> 0.4%
+                    </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Date Filters -->
+<section class="px-4 mt-6">
+<div class="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-primary text-white text-sm font-semibold shadow-md shadow-primary/20">Today</button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-card border border-white/10 text-gray-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">Yesterday</button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-card border border-white/10 text-gray-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-colors">Last Week</button>
+</div>
+</section>
+<!-- Today's Recommendations -->
+<section class="px-4 mt-6">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-bold text-white tracking-tight">Today's Recommendations</h2>
+<button class="text-primary text-sm font-semibold hover:text-primary-dark transition-colors">View All</button>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Recommendation Card 1 -->
+<div class="group relative overflow-hidden rounded-2xl bg-surface-card border border-white/5 shadow-lg hover:shadow-primary/10 hover:border-primary/30 transition-all duration-300">
+<div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+<span class="text-6xl font-black text-white/20">01</span>
+</div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white font-bold text-sm shadow-sm">1</div>
+<div>
+<h3 class="text-base font-bold text-white leading-tight">Samsung Elec</h3>
+<p class="text-xs text-gray-400 font-medium">005930 • KOSPI</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs text-gray-400 uppercase font-semibold">Target Wgt</p>
+<p class="text-lg font-bold text-primary">15.0%</p>
+</div>
+</div>
+<div class="flex items-end justify-between gap-4">
+<div class="flex-1 h-12 flex items-end pb-1">
+<!-- SVG Sparkline -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 40">
+<defs>
+<lineargradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#2a6f63;stop-opacity:0.3"></stop>
+<stop offset="100%" style="stop-color:#2a6f63;stop-opacity:0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,35 Q10,35 20,25 T40,20 T60,25 T80,10 T100,5" fill="url(#grad1)" stroke="#2a6f63" stroke-width="2"></path>
+</svg>
+</div>
+<button class="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md shadow-primary/20 transition-transform active:scale-95">
+<span>Explain</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Recommendation Card 2 -->
+<div class="group relative overflow-hidden rounded-2xl bg-surface-card border border-white/5 shadow-lg hover:shadow-primary/10 hover:border-primary/30 transition-all duration-300">
+<div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+<span class="text-6xl font-black text-white/20">02</span>
+</div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-dark border border-white/10 text-gray-300 font-bold text-sm">2</div>
+<div>
+<h3 class="text-base font-bold text-white leading-tight">SK Hynix</h3>
+<p class="text-xs text-gray-400 font-medium">000660 • KOSPI</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs text-gray-400 uppercase font-semibold">Target Wgt</p>
+<p class="text-lg font-bold text-white">12.5%</p>
+</div>
+</div>
+<div class="flex items-end justify-between gap-4">
+<div class="flex-1 h-12 flex items-end pb-1">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 40">
+<path d="M0,30 Q20,35 30,25 T50,20 T70,15 T100,20" fill="transparent" stroke="#0bda4d" stroke-dasharray="4,2" stroke-width="2"></path>
+</svg>
+</div>
+<button class="flex items-center gap-2 bg-surface-dark border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-lg text-sm font-bold transition-transform active:scale-95">
+<span>Explain</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Recommendation Card 3 -->
+<div class="group relative overflow-hidden rounded-2xl bg-surface-card border border-white/5 shadow-lg hover:shadow-primary/10 hover:border-primary/30 transition-all duration-300">
+<div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+<span class="text-6xl font-black text-white/20">03</span>
+</div>
+<div class="p-5">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-dark border border-white/10 text-gray-300 font-bold text-sm">3</div>
+<div>
+<h3 class="text-base font-bold text-white leading-tight">Naver</h3>
+<p class="text-xs text-gray-400 font-medium">035420 • KOSPI</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs text-gray-400 uppercase font-semibold">Target Wgt</p>
+<p class="text-lg font-bold text-white">8.0%</p>
+</div>
+</div>
+<div class="flex items-end justify-between gap-4">
+<div class="flex-1 h-12 flex items-end pb-1">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 40">
+<path d="M0,20 L20,25 L40,15 L60,30 L80,20 L100,10" fill="transparent" stroke="#2a6f63" stroke-width="2"></path>
+</svg>
+</div>
+<button class="flex items-center gap-2 bg-surface-dark border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-lg text-sm font-bold transition-transform active:scale-95">
+<span>Explain</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Watchlist Signals -->
+<section class="px-4 mt-8">
+<h2 class="text-lg font-bold text-white tracking-tight mb-4">Watchlist Signals</h2>
+<div class="grid gap-3">
+<!-- Signal 1 -->
+<div class="flex items-center justify-between p-4 rounded-xl bg-[#1a2523] border-l-4 border-accent-green shadow-sm">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-bold text-white">LG Energy</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-accent-green/20 text-accent-green border border-accent-green/30">BUY</span>
+</div>
+<p class="text-xs text-gray-400">Golden Cross pattern detected</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-sm font-bold text-white">+2.4%</span>
+<span class="text-[10px] text-gray-500">Just now</span>
+</div>
+</div>
+<!-- Signal 2 -->
+<div class="flex items-center justify-between p-4 rounded-xl bg-[#1a2523] border-l-4 border-blue-400 shadow-sm">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-bold text-white">Kakao Pay</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-400/20 text-blue-400 border border-blue-400/30">WAIT</span>
+</div>
+<p class="text-xs text-gray-400">Approaching resistance</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-sm font-bold text-white">-0.5%</span>
+<span class="text-[10px] text-gray-500">10m ago</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Industry Snapshot (Bottom Widget) -->
+<section class="px-4 mt-8 mb-6">
+<div class="p-5 rounded-2xl bg-gradient-to-br from-[#2c3f3c] to-surface-card border border-white/5">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-bold text-white">Industry Distribution</h3>
+<span class="material-symbols-outlined text-gray-400 text-[18px]">pie_chart</span>
+</div>
+<!-- Segmented Bar -->
+<div class="flex h-4 w-full rounded-full overflow-hidden mb-3">
+<div class="w-[45%] h-full bg-primary relative group cursor-pointer" title="Tech 45%"></div>
+<div class="w-[30%] h-full bg-blue-500 relative group cursor-pointer" title="Bio 30%"></div>
+<div class="w-[25%] h-full bg-gray-500 relative group cursor-pointer" title="Auto 25%"></div>
+</div>
+<!-- Legend -->
+<div class="flex justify-between text-xs text-gray-300">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-medium">Tech 45%</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-blue-500"></div>
+<span class="font-medium">Bio 30%</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-gray-500"></div>
+<span class="font-medium">Auto 25%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 bg-[#151e1d]/90 dark:bg-[#151e1d]/90 backdrop-blur-lg border-t border-white/5 pb- safe-area-pb">
+<div class="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+<button class="flex flex-col items-center justify-center gap-1 w-16 h-full text-primary">
+<span class="material-symbols-outlined filled" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">home</span>
+<span class="text-[10px] font-bold">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-500 hover:text-gray-300 transition-colors">
+<span class="material-symbols-outlined">visibility</span>
+<span class="text-[10px] font-medium">Watchlist</span>
+</button>
+<button class="flex items-center justify-center w-12 h-12 -mt-6 rounded-full bg-primary shadow-lg shadow-primary/30 text-white">
+<span class="material-symbols-outlined" style="font-size: 28px;">add</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-500 hover:text-gray-300 transition-colors">
+<span class="material-symbols-outlined">pie_chart</span>
+<span class="text-[10px] font-medium">Portfolio</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 w-16 h-full text-gray-500 hover:text-gray-300 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</button>
+</div>
+</nav>
+<!-- Safe Area for Notch phones -->
+<div class="h-6 w-full"></div>
+</body></html>

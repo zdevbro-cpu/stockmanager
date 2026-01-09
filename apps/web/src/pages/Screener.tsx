@@ -1,267 +1,164 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-  getClassificationNodes,
-  getSecurityClassifications,
-  getUniverse,
-} from "../lib/apiClient";
-import { useAppSettings } from "../store/appStore";
-import { FilterPanel } from "../components/shared/FilterPanel";
-import { Drawer } from "../components/ui/Drawer";
-import { DataTable } from "../components/ui/DataTable";
-import { Panel } from "../components/shared/Panel";
-import { Button } from "../components/ui/Button";
-import { Badge } from "../components/ui/Badge";
-import { ErrorState } from "../components/ui/ErrorState";
-import { formatNumber } from "../lib/utils";
-import type { Classification, UniverseItem } from "../types/api";
-import { useWatchlist } from "../store/watchlistStore";
-import { useErrorToast } from "../lib/useErrorToast";
+import { useState } from 'react';
+import { INDUSTRY_RANKINGS, RECOMENDATIONS, THEME_RANKINGS } from '../lib/mockData';
+import clsx from 'clsx';
 
-const ScreenerPage = () => {
-  const { asOfDate, apiBaseUrl, demoMode, searchQuery } = useAppSettings();
-  const { addTicker } = useWatchlist();
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [selected, setSelected] = useState<UniverseItem | null>(null);
-  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
-  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  const [minPrice, setMinPrice] = useState("");
-  const [minTurnover, setMinTurnover] = useState("");
+// Mock large list for the table
+const MOCK_SCREENER_RESULTS = [
+    ...RECOMENDATIONS.map(r => ({ ...r, market: 'KOSPI', price: 72000, turnover: 500000000, sector: '반도체' })),
+    { rank: 6, ticker: '005490', name: 'POSCO홀딩스', market: 'KOSPI', price: 450000, turnover: 300000000, sector: '철강', target: 'WAIT', score: 60, weight: '0%' },
+    { rank: 7, ticker: '035720', name: '카카오', market: 'KOSPI', price: 54300, turnover: 150000000, sector: '서비스', target: 'HOLD', score: 55, weight: '0%' },
+    { rank: 8, ticker: '247540', name: '에코프로비엠', market: 'KOSDAQ', price: 280000, turnover: 800000000, sector: '2차전지', target: 'BUY', score: 82, weight: '0%' },
+    { rank: 9, ticker: '068270', name: '셀트리온', market: 'KOSPI', price: 180000, turnover: 120000000, sector: '의약품', target: 'WAIT', score: 58, weight: '0%' },
+    // Duplicate for scroll
+    { rank: 10, ticker: '000270', name: '기아', market: 'KOSPI', price: 95000, turnover: 220000000, sector: '자동차', target: 'BUY', score: 75, weight: '0%' },
+];
 
-  const industriesQuery = useQuery({
-    queryKey: ["industries", apiBaseUrl, demoMode],
-    queryFn: () =>
-      getClassificationNodes(
-        { baseUrl: apiBaseUrl, demoMode },
-        { taxonomy_id: "KIS_INDUSTRY", level: 1 }
-      ),
-  });
+export default function Screener() {
+    const [priceMin, setPriceMin] = useState<string>('');
+    const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
+    const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
 
-  const themesQuery = useQuery({
-    queryKey: ["themes", apiBaseUrl, demoMode],
-    queryFn: () =>
-      getClassificationNodes(
-        { baseUrl: apiBaseUrl, demoMode },
-        { taxonomy_id: "THEME" }
-      ),
-  });
-
-  const universeQuery = useQuery({
-    queryKey: [
-      "universe",
-      asOfDate,
-      selectedIndustries,
-      selectedThemes,
-      minPrice,
-      minTurnover,
-      apiBaseUrl,
-      demoMode,
-    ],
-    queryFn: () =>
-      getUniverse(
-        { baseUrl: apiBaseUrl, demoMode },
-        {
-          as_of_date: asOfDate,
-          include_industry_codes: selectedIndustries,
-          include_theme_ids: selectedThemes,
-          min_price: minPrice ? Number(minPrice) : null,
-          min_turnover: minTurnover ? Number(minTurnover) : null,
+    const toggleIndustry = (name: string) => {
+        if (selectedIndustries.includes(name)) {
+            setSelectedIndustries(selectedIndustries.filter(i => i !== name));
+        } else {
+            setSelectedIndustries([...selectedIndustries, name]);
         }
-      ),
-  });
+    };
 
-  useErrorToast(
-    universeQuery.isError,
-    "유니버스 데이터를 불러오지 못했습니다."
-  );
+    const toggleTheme = (name: string) => {
+        if (selectedThemes.includes(name)) {
+            setSelectedThemes(selectedThemes.filter(t => t !== name));
+        } else {
+            setSelectedThemes([...selectedThemes, name]);
+        }
+    };
 
-  const filteredRows = useMemo(() => {
-    const list = universeQuery.data ?? [];
-    if (!searchQuery) return list;
-    return list.filter(
-      (item) =>
-        item.ticker.includes(searchQuery.trim()) ||
-        item.name_ko.includes(searchQuery.trim())
-    );
-  }, [universeQuery.data, searchQuery]);
-
-  const detailQuery = useQuery({
-    queryKey: ["security-classifications", selected?.ticker, apiBaseUrl, demoMode],
-    queryFn: () =>
-      selected
-        ? getSecurityClassifications(
-            { baseUrl: apiBaseUrl, demoMode },
-            selected.ticker
-          )
-        : Promise.resolve([] as Classification[]),
-    enabled: !!selected,
-  });
-
-  const columns = [
-    { header: "티커", key: "ticker", width: "90px" },
-    { header: "기업명", key: "name_ko" },
-    { header: "시장", key: "market", width: "90px" },
-    {
-      header: "산업",
-      key: "sector_name",
-      render: (row: UniverseItem) => row.sector_name ?? "-",
-    },
-    {
-      header: "가격",
-      key: "last_price_krw",
-      render: (row: UniverseItem) => formatNumber(row.last_price_krw),
-      align: "right",
-    },
-    {
-      header: "거래대금(20D)",
-      key: "avg_turnover_krw_20d",
-      render: (row: UniverseItem) => formatNumber(row.avg_turnover_krw_20d),
-      align: "right",
-    },
-  ];
-
-  const toggleIndustry = (code: string) => {
-    setSelectedIndustries((prev) =>
-      prev.includes(code) ? prev.filter((item) => item !== code) : [...prev, code]
-    );
-  };
-
-  const toggleTheme = (code: string) => {
-    setSelectedThemes((prev) =>
-      prev.includes(code) ? prev.filter((item) => item !== code) : [...prev, code]
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-lg font-semibold text-[var(--text)]">스크리너</div>
-          <div className="text-xs text-[var(--muted)]">
-            유니버스 필터와 조건을 적용해 종목을 탐색합니다.
-          </div>
-        </div>
-        <div className="lg:hidden">
-          <Button
-            label="필터 열기"
-            variant="outline"
-            onClick={() => setFilterOpen(true)}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <div className="hidden lg:block">
-          <Panel title="필터">
-            <FilterPanel
-              industries={industriesQuery.data ?? []}
-              themes={themesQuery.data ?? []}
-              selectedIndustries={selectedIndustries}
-              selectedThemes={selectedThemes}
-              minPrice={minPrice}
-              minTurnover={minTurnover}
-              onToggleIndustry={toggleIndustry}
-              onToggleTheme={toggleTheme}
-              onMinPriceChange={setMinPrice}
-              onMinTurnoverChange={setMinTurnover}
-            />
-          </Panel>
-        </div>
-
-        <div>
-          <Panel title={`결과 (${filteredRows.length})`}>
-            {universeQuery.isError ? (
-              <ErrorState />
-            ) : (
-              <DataTable
-                columns={columns}
-                rows={filteredRows}
-                loading={universeQuery.isLoading}
-                emptyMessage="조건에 맞는 종목이 없습니다."
-                onRowClick={(row) => setSelected(row)}
-              />
-            )}
-          </Panel>
-        </div>
-      </div>
-
-      <Drawer
-        open={filterOpen}
-        onClose={() => setFilterOpen(false)}
-        title="필터"
-        placement="bottom"
-      >
-        <FilterPanel
-          industries={industriesQuery.data ?? []}
-          themes={themesQuery.data ?? []}
-          selectedIndustries={selectedIndustries}
-          selectedThemes={selectedThemes}
-          minPrice={minPrice}
-          minTurnover={minTurnover}
-          onToggleIndustry={toggleIndustry}
-          onToggleTheme={toggleTheme}
-          onMinPriceChange={setMinPrice}
-          onMinTurnoverChange={setMinTurnover}
-        />
-      </Drawer>
-
-      <Drawer
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        title={selected ? `${selected.name_ko} 상세` : "상세"}
-      >
-        {selected && (
-          <div className="space-y-4 text-sm">
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-              <div className="text-xs text-[var(--muted)]">티커</div>
-              <div className="text-lg font-semibold">{selected.ticker}</div>
-              <div className="mt-1 text-xs text-[var(--muted)]">
-                {selected.market} · {selected.sector_name ?? "산업 미정"}
-              </div>
-            </div>
-            <div>
-              <div className="mb-2 text-xs font-semibold text-[var(--muted)]">
-                분류 태그
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(detailQuery.data ?? []).map((tag) => (
-                  <Badge
-                    key={tag.code}
-                    label={`${tag.name} (${tag.code})`}
-                    variant="info"
-                  />
-                ))}
-                {(detailQuery.data ?? []).length === 0 && (
-                  <span className="text-xs text-[var(--muted)]">
-                    분류 정보 없음
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-[var(--border)] p-3">
-                <div className="text-xs text-[var(--muted)]">현재가</div>
-                <div className="text-sm font-semibold">
-                  {formatNumber(selected.last_price_krw)}
+    return (
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)]">
+            {/* Filter Panel (Left) */}
+            <aside className="w-full lg:w-72 flex-shrink-0 bg-card-dark border border-border-dark rounded-xl p-4 flex flex-col gap-6 overflow-y-auto">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">필터 (Filters)</h2>
+                    <button className="text-xs text-primary font-bold hover:underline">초기화</button>
                 </div>
-              </div>
-              <div className="rounded-lg border border-[var(--border)] p-3">
-                <div className="text-xs text-[var(--muted)]">거래대금</div>
-                <div className="text-sm font-semibold">
-                  {formatNumber(selected.avg_turnover_krw_20d)}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button label="관심 추가" onClick={() => addTicker(selected.ticker)} />
-              <Button label="시그널 보기" variant="outline" />
-              <Button label="추천 보기" variant="outline" />
-            </div>
-          </div>
-        )}
-      </Drawer>
-    </div>
-  );
-};
 
-export default ScreenerPage;
+                {/* Price Filter */}
+                <div className="flex flex-col gap-2">
+                    <label className="text-sm font-bold text-text-subtle">최소 주가 (KRW)</label>
+                    <input
+                        type="number"
+                        placeholder="예: 10000"
+                        value={priceMin}
+                        onChange={(e) => setPriceMin(e.target.value)}
+                        className="bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-white focus:border-primary outline-none"
+                    />
+                </div>
+
+                {/* Industry Filter */}
+                <div className="flex flex-col gap-2">
+                    <label className="text-sm font-bold text-text-subtle">업종 (Industry)</label>
+                    <div className="flex flex-col gap-1 max-h-40 overflow-y-auto pr-1">
+                        {INDUSTRY_RANKINGS.map((ind) => (
+                            <label key={ind.name} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer hover:text-white">
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-border-dark bg-background-dark text-primary focus:ring-primary"
+                                    checked={selectedIndustries.includes(ind.name)}
+                                    onChange={() => toggleIndustry(ind.name)}
+                                />
+                                {ind.name}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Theme Filter */}
+                <div className="flex flex-col gap-2">
+                    <label className="text-sm font-bold text-text-subtle">테마 (Theme)</label>
+                    <div className="flex flex-wrap gap-2">
+                        {THEME_RANKINGS.map((theme) => (
+                            <button
+                                key={theme.name}
+                                onClick={() => toggleTheme(theme.name)}
+                                className={clsx(
+                                    "px-2 py-1 rounded-full text-xs font-medium border transition-colors text-left",
+                                    selectedThemes.includes(theme.name)
+                                        ? "bg-primary/20 border-primary text-primary"
+                                        : "bg-background-dark border-border-dark text-gray-400 hover:border-gray-500"
+                                )}
+                            >
+                                {theme.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </aside>
+
+            {/* Results Table (Right) */}
+            <main className="flex-1 bg-card-dark border border-border-dark rounded-xl flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-border-dark flex items-center justify-between bg-card-dark">
+                    <div className="flex items-center gap-2">
+                        <span className="text-white font-bold">검색 결과</span>
+                        <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-0.5 rounded-full">{MOCK_SCREENER_RESULTS.length}건</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <button className="flex items-center gap-1 text-sm text-text-subtle hover:text-white px-3 py-1.5 border border-border-dark rounded-lg">
+                            <span className="material-symbols-outlined text-[18px]">download</span>
+                            다운로드
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead className="text-text-subtle font-medium bg-background-dark sticky top-0 z-10">
+                            <tr>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark">종목명 (Ticker)</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark">시장</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark">업종</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark text-right">현재가</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark text-right">거래일</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark text-center">신호</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark text-right">점수</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border-dark/50">
+                            {MOCK_SCREENER_RESULTS.map((item, i) => (
+                                <tr key={i} className="hover:bg-white/5 transition-colors cursor-pointer text-gray-300">
+                                    <td className="px-4 py-3">
+                                        <div className="flex flex-col">
+                                            <span className="text-white font-bold">{item.name}</span>
+                                            <span className="text-text-subtle text-xs">{item.ticker}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">{item.market}</td>
+                                    <td className="px-4 py-3">{item.sector}</td>
+                                    <td className="px-4 py-3 text-right font-medium text-white">
+                                        {item.price.toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-text-subtle">
+                                        {(item.turnover / 100000000).toFixed(1)}억
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        <span className={clsx(
+                                            "px-2 py-1 rounded text-xs font-bold",
+                                            item.target === 'BUY' ? "bg-green-500/20 text-green-500" :
+                                                item.target === 'SELL' ? "bg-red-500/20 text-red-500" :
+                                                    item.target === 'WAIT' ? "bg-yellow-500/20 text-yellow-500" : "bg-gray-700 text-gray-400"
+                                        )}>
+                                            {item.target || '-'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-primary font-bold">
+                                        {item.score || '-'}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    );
+}

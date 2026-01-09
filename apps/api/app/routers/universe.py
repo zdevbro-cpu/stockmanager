@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date as dt_date
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 
 from ..auth import get_current_user
 from ..db import get_db
@@ -92,3 +92,22 @@ def get_universe(
         })
 
     return {"items": items}
+@router.get("/search/company")
+def search_company(q: str, db: Session = Depends(get_db)):
+    # Search in company table by name_ko or stock_code
+    stmt = text("""
+        SELECT company_id, name_ko, stock_code, sector_name, market
+        FROM company
+        WHERE name_ko ILIKE :q OR stock_code ILIKE :q
+        LIMIT 10
+    """)
+    rows = db.execute(stmt, {"q": f"%{q}%"}).fetchall()
+    return [
+        {
+            "id": r.company_id,
+            "name": r.name_ko,
+            "ticker": r.stock_code,
+            "sector": r.sector_name,
+            "market": r.market
+        } for r in rows
+    ]

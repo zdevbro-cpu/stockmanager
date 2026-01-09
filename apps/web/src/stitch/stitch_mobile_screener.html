@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StockManager Screener</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#1f96ad",
+              "background-light": "#f6f8f8",
+              "background-dark": "#121e20",
+              "surface-dark": "#1a2629",
+              "surface-highlight": "#233034",
+            },
+            fontFamily: {
+              "display": ["Manrope", "sans-serif"],
+              "headline": ["Space Grotesk", "sans-serif"],
+            },
+            borderRadius: {
+              "DEFAULT": "0.25rem", 
+              "sm": "0.125rem",
+              "lg": "0.5rem", 
+              "xl": "0.75rem", 
+              "2xl": "1rem",
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom scrollbar hiding for sleek mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(18, 30, 32, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased selection:bg-primary selection:text-white overflow-x-hidden pb-32">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-40 w-full border-b border-white/5 glass">
+<div class="flex items-center justify-between px-4 py-3">
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-xl font-bold font-headline tracking-tight text-white">Screener</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="relative p-2 text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="relative flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-full transition-colors border border-primary/20">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+<span class="text-sm font-semibold">Filter</span>
+<span class="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary ring-2 ring-background-dark"></span>
+</button>
+</div>
+</div>
+<!-- Active Filters (Chips) -->
+<div class="w-full overflow-x-auto no-scrollbar py-2 pl-4 pr-4 border-t border-white/5">
+<div class="flex gap-2">
+<div class="group flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-surface-highlight border border-white/5 pl-3 pr-2 active:scale-95 transition-transform cursor-pointer">
+<span class="text-gray-300 text-xs font-medium">KOSPI</span>
+<span class="material-symbols-outlined text-gray-500 text-[14px] group-hover:text-white">close</span>
+</div>
+<div class="group flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-surface-highlight border border-white/5 pl-3 pr-2 active:scale-95 transition-transform cursor-pointer">
+<span class="text-gray-300 text-xs font-medium">Tech</span>
+<span class="material-symbols-outlined text-gray-500 text-[14px] group-hover:text-white">close</span>
+</div>
+<div class="group flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-surface-highlight border border-white/5 pl-3 pr-2 active:scale-95 transition-transform cursor-pointer">
+<span class="text-gray-300 text-xs font-medium">Semi-con</span>
+<span class="material-symbols-outlined text-gray-500 text-[14px] group-hover:text-white">close</span>
+</div>
+<div class="group flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-primary/20 border border-primary/30 pl-3 pr-2 active:scale-95 transition-transform cursor-pointer">
+<span class="text-primary text-xs font-bold">&gt; 50k KRW</span>
+<span class="material-symbols-outlined text-primary/70 text-[14px] group-hover:text-primary">close</span>
+</div>
+<div class="group flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-surface-highlight border border-white/5 pl-3 pr-2 active:scale-95 transition-transform cursor-pointer">
+<span class="text-gray-300 text-xs font-medium">Vol &gt; 1M</span>
+<span class="material-symbols-outlined text-gray-500 text-[14px] group-hover:text-white">close</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Meta / Results Header -->
+<div class="flex items-center justify-between px-4 py-3 bg-background-dark">
+<p class="text-gray-400 text-sm font-medium">342 Matches found</p>
+<div class="flex items-center gap-1 cursor-pointer">
+<span class="text-xs text-primary font-bold uppercase tracking-wider">Sort by Vol</span>
+<span class="material-symbols-outlined text-primary text-[16px]">arrow_downward</span>
+</div>
+</div>
+<!-- Data Table -->
+<main class="w-full">
+<!-- Table Header -->
+<div class="grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-2 border-y border-white/5 bg-surface-dark/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+<div>Ticker / Name</div>
+<div class="text-right">Price / Chg</div>
+<div class="text-right">Vol / T.Over</div>
+</div>
+<!-- Row 1 -->
+<div class="group relative grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-3 border-b border-white/5 bg-background-dark hover:bg-surface-highlight transition-colors cursor-pointer">
+<div class="flex flex-col justify-center">
+<span class="text-gray-400 text-xs font-headline font-medium">005930</span>
+<span class="text-white text-sm font-bold truncate">Samsung Elec</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-white text-sm font-bold tracking-tight">72,500</span>
+<span class="text-emerald-500 text-xs font-medium bg-emerald-500/10 px-1.5 rounded-sm">+1.2%</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-gray-300 text-sm">12.4M</span>
+<span class="text-gray-600 text-[10px] font-medium">890B</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="group relative grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-3 border-b border-white/5 bg-background-dark hover:bg-surface-highlight transition-colors cursor-pointer">
+<div class="flex flex-col justify-center">
+<span class="text-gray-400 text-xs font-headline font-medium">000660</span>
+<span class="text-white text-sm font-bold truncate">SK Hynix</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-white text-sm font-bold tracking-tight">115,000</span>
+<span class="text-rose-500 text-xs font-medium bg-rose-500/10 px-1.5 rounded-sm">-0.5%</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-gray-300 text-sm">4.2M</span>
+<span class="text-gray-600 text-[10px] font-medium">480B</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="group relative grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-3 border-b border-white/5 bg-background-dark hover:bg-surface-highlight transition-colors cursor-pointer">
+<div class="flex flex-col justify-center">
+<span class="text-gray-400 text-xs font-headline font-medium">373220</span>
+<span class="text-white text-sm font-bold truncate">LG Energy Sol</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-white text-sm font-bold tracking-tight">412,000</span>
+<span class="text-emerald-500 text-xs font-medium bg-emerald-500/10 px-1.5 rounded-sm">+0.8%</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-gray-300 text-sm">210K</span>
+<span class="text-gray-600 text-[10px] font-medium">86B</span>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="group relative grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-3 border-b border-white/5 bg-background-dark hover:bg-surface-highlight transition-colors cursor-pointer">
+<div class="flex flex-col justify-center">
+<span class="text-gray-400 text-xs font-headline font-medium">035420</span>
+<span class="text-white text-sm font-bold truncate">NAVER</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-white text-sm font-bold tracking-tight">205,500</span>
+<span class="text-emerald-500 text-xs font-medium bg-emerald-500/10 px-1.5 rounded-sm">+2.4%</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-gray-300 text-sm">890K</span>
+<span class="text-gray-600 text-[10px] font-medium">182B</span>
+</div>
+</div>
+<!-- Row 5 -->
+<div class="group relative grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-3 border-b border-white/5 bg-background-dark hover:bg-surface-highlight transition-colors cursor-pointer">
+<div class="flex flex-col justify-center">
+<span class="text-gray-400 text-xs font-headline font-medium">005380</span>
+<span class="text-white text-sm font-bold truncate">Hyundai Motor</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-white text-sm font-bold tracking-tight">188,200</span>
+<span class="text-rose-500 text-xs font-medium bg-rose-500/10 px-1.5 rounded-sm">-1.1%</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-gray-300 text-sm">560K</span>
+<span class="text-gray-600 text-[10px] font-medium">105B</span>
+</div>
+</div>
+<!-- Row 6 -->
+<div class="group relative grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-3 border-b border-white/5 bg-background-dark hover:bg-surface-highlight transition-colors cursor-pointer">
+<div class="flex flex-col justify-center">
+<span class="text-gray-400 text-xs font-headline font-medium">051910</span>
+<span class="text-white text-sm font-bold truncate">LG Chem</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-white text-sm font-bold tracking-tight">562,000</span>
+<span class="text-emerald-500 text-xs font-medium bg-emerald-500/10 px-1.5 rounded-sm">+0.3%</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-gray-300 text-sm">180K</span>
+<span class="text-gray-600 text-[10px] font-medium">101B</span>
+</div>
+</div>
+<!-- Row 7 -->
+<div class="group relative grid grid-cols-[1.5fr_1fr_1fr] gap-4 px-4 py-3 border-b border-white/5 bg-background-dark hover:bg-surface-highlight transition-colors cursor-pointer">
+<div class="flex flex-col justify-center">
+<span class="text-gray-400 text-xs font-headline font-medium">000270</span>
+<span class="text-white text-sm font-bold truncate">Kia Corp</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-white text-sm font-bold tracking-tight">84,100</span>
+<span class="text-emerald-500 text-xs font-medium bg-emerald-500/10 px-1.5 rounded-sm">+1.8%</span>
+</div>
+<div class="flex flex-col justify-center items-end">
+<span class="text-gray-300 text-sm">1.2M</span>
+<span class="text-gray-600 text-[10px] font-medium">100B</span>
+</div>
+</div>
+</main>
+<!-- Visual Representation of Bottom Sheet Filter Drawer (Open State Mockup) -->
+<!-- In a real app, this would overlay. Here it is placed at bottom for demo purposes -->
+<section class="mt-8 border-t border-primary/30 rounded-t-2xl bg-surface-dark shadow-[0_-10px_40px_-15px_rgba(31,150,173,0.3)]">
+<!-- Drag Handle -->
+<div class="w-full flex justify-center pt-3 pb-1">
+<div class="h-1 w-12 rounded-full bg-gray-600"></div>
+</div>
+<!-- Sheet Header -->
+<div class="flex items-center justify-between px-5 py-3 border-b border-white/5">
+<h3 class="text-lg font-bold text-white font-headline">Filters</h3>
+<button class="text-sm text-primary font-medium">Reset</button>
+</div>
+<!-- Sheet Body -->
+<div class="p-5 space-y-6">
+<!-- Industry Tree (Simplified for mobile) -->
+<div class="space-y-3">
+<p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Industry</p>
+<div class="space-y-1">
+<div class="flex items-center justify-between p-3 rounded-lg bg-background-dark border border-white/5 cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-gray-400">memory</span>
+<span class="text-sm font-medium text-white">Technology</span>
+</div>
+<span class="material-symbols-outlined text-gray-500 text-sm">expand_more</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-background-dark border border-white/5 cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-gray-400">account_balance</span>
+<span class="text-sm font-medium text-white">Finance</span>
+</div>
+<span class="material-symbols-outlined text-gray-500 text-sm">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Themes (Multi-select) -->
+<div class="space-y-3">
+<p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Popular Themes</p>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1.5 rounded bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/20 border border-primary">Semiconductors</button>
+<button class="px-3 py-1.5 rounded bg-surface-highlight text-gray-300 text-sm font-medium border border-white/5 hover:border-gray-500">EV Batteries</button>
+<button class="px-3 py-1.5 rounded bg-surface-highlight text-gray-300 text-sm font-medium border border-white/5 hover:border-gray-500">AI &amp; Cloud</button>
+<button class="px-3 py-1.5 rounded bg-surface-highlight text-gray-300 text-sm font-medium border border-white/5 hover:border-gray-500">Bio / Pharma</button>
+</div>
+</div>
+<!-- Financial Inputs -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Min Price (KRW)</label>
+<div class="flex items-center bg-background-dark rounded border border-white/10 focus-within:border-primary px-3 py-2.5">
+<span class="text-gray-500 mr-2 text-sm">₩</span>
+<input class="bg-transparent border-none text-white text-sm font-medium p-0 w-full focus:ring-0 placeholder-gray-600" type="text" value="50,000"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Min Turnover</label>
+<div class="flex items-center bg-background-dark rounded border border-white/10 focus-within:border-primary px-3 py-2.5">
+<input class="bg-transparent border-none text-white text-sm font-medium p-0 w-full focus:ring-0 placeholder-gray-600" type="text" value="10B"/>
+</div>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                Save &amp; Apply Filters
+            </button>
+<div class="h-4"></div> <!-- Spacer for mobile bottom bar area -->
+</div>
+</section>
+<!-- FAB for Detail Drawer (Simulation) -->
+<!-- Showing that rows are interactive -->
+<div class="fixed bottom-6 right-6">
+<!-- This is illustrative of where a FAB might be if needed, though the list is the main interaction -->
+</div>
+</body></html>

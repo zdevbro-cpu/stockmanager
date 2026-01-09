@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StockManager - Report Library</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0f1115", // Deep slate/near-black as requested
+                        "surface-dark": "#1a1d24", // Slightly lighter for components
+                        "surface-hover": "#232730", // For hover states
+                        "border-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100 min-h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark px-6 py-3 h-16 shrink-0 z-20">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-gray-900 dark:text-white">
+<div class="size-8 text-primary">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-tight">StockManager</h2>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<label class="hidden md:flex flex-col min-w-40 h-10 w-64 group">
+<div class="flex w-full flex-1 items-stretch rounded-lg bg-gray-100 dark:bg-background-dark border border-transparent group-focus-within:border-primary/50 transition-colors">
+<div class="text-gray-500 dark:text-gray-400 flex items-center justify-center pl-3">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-transparent border-none text-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-500 focus:outline-0 focus:ring-0 px-3 h-full" placeholder="Search for ticker..."/>
+</div>
+</label>
+<button class="relative flex items-center justify-center size-10 rounded-full hover:bg-gray-100 dark:hover:bg-background-dark text-gray-600 dark:text-gray-300 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-surface-dark"></span>
+</button>
+<div class="size-9 rounded-full bg-cover bg-center ring-2 ring-gray-200 dark:ring-border-dark cursor-pointer" data-alt="User profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAi6cNMZoFCyaFmmBnXOIRA-Cs_lj4UwHxLJNyNckjuW6yGwXXr08_QduZlXO4v-iZo1rnrzXHinf0tbxJGz1o4RUCZbm9WzDm4cw32cUgKaVWcrDOn1FQGzcppUK9ga2aoLXg7_Lku1y8QtNKYyoYCoU9xx8yt_MKRIJvv717k0qTt6XdE2KjwJFEFqnZLV-s8ZJAAVQ_dXiT-fQ2d3vSPgeRDQsRAZX1j9Z72pNxYI7FxwequT0gex6dcAri1zHg-GgKF9BBxr_c");'>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex flex-col w-64 bg-white dark:bg-surface-dark border-r border-gray-200 dark:border-border-dark shrink-0">
+<div class="flex flex-col gap-2 p-4">
+<div class="mb-4 px-3">
+<p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main Menu</p>
+</div>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-hover transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">grid_view</span>
+<p class="text-sm font-medium">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary dark:text-white dark:bg-primary/20" href="#">
+<span class="material-symbols-outlined text-primary dark:text-primary">description</span>
+<p class="text-sm font-medium">Report Library</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-hover transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">show_chart</span>
+<p class="text-sm font-medium">Live Market</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-hover transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">work_outline</span>
+<p class="text-sm font-medium">Portfolio</p>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-2 p-4 border-t border-gray-200 dark:border-border-dark">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-hover transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">settings</span>
+<p class="text-sm font-medium">Settings</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-hover transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">help</span>
+<p class="text-sm font-medium">Help &amp; Support</p>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-hidden bg-background-light dark:bg-background-dark relative">
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
+<div class="max-w-[1400px] mx-auto flex flex-col gap-8">
+<!-- Breadcrumbs & Header -->
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+<a class="hover:text-primary transition-colors" href="#">Home</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-gray-900 dark:text-white font-medium">Report Library</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+<div>
+<h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Report Library</h1>
+<p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">Access and manage your generated financial analysis reports.</p>
+</div>
+<button class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all shadow-lg shadow-primary/25 shrink-0">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>Generate New Report</span>
+</button>
+</div>
+</div>
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-white dark:bg-surface-dark p-5 rounded-xl border border-gray-200 dark:border-border-dark shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Reports</p>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-md text-[20px]">library_books</span>
+</div>
+<p class="text-2xl font-bold text-gray-900 dark:text-white">1,240</p>
+<div class="flex items-center gap-1 mt-1 text-xs text-green-500 font-medium">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+12% vs last month</span>
+</div>
+</div>
+<div class="bg-white dark:bg-surface-dark p-5 rounded-xl border border-gray-200 dark:border-border-dark shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400">New Today</p>
+<span class="material-symbols-outlined text-blue-400 bg-blue-400/10 p-1.5 rounded-md text-[20px]">today</span>
+</div>
+<p class="text-2xl font-bold text-gray-900 dark:text-white">15</p>
+<div class="flex items-center gap-1 mt-1 text-xs text-gray-500 dark:text-gray-400">
+<span>Processing 3 reports...</span>
+</div>
+</div>
+<div class="bg-white dark:bg-surface-dark p-5 rounded-xl border border-gray-200 dark:border-border-dark shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Buy Signals</p>
+<span class="material-symbols-outlined text-green-500 bg-green-500/10 p-1.5 rounded-md text-[20px]">arrow_upward</span>
+</div>
+<p class="text-2xl font-bold text-gray-900 dark:text-white">48<span class="text-sm font-normal text-gray-400 ml-1">/ 120</span></p>
+<div class="w-full bg-gray-200 dark:bg-background-dark rounded-full h-1.5 mt-2 overflow-hidden">
+<div class="bg-green-500 h-1.5 rounded-full" style="width: 40%"></div>
+</div>
+</div>
+<div class="bg-white dark:bg-surface-dark p-5 rounded-xl border border-gray-200 dark:border-border-dark shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Avg. Accuracy</p>
+<span class="material-symbols-outlined text-purple-400 bg-purple-400/10 p-1.5 rounded-md text-[20px]">target</span>
+</div>
+<p class="text-2xl font-bold text-gray-900 dark:text-white">87.2%</p>
+<div class="flex items-center gap-1 mt-1 text-xs text-green-500 font-medium">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+0.5% this week</span>
+</div>
+</div>
+</div>
+<!-- Filter Toolbar -->
+<div class="flex flex-col lg:flex-row gap-4 p-4 bg-white dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-border-dark shadow-sm items-center">
+<div class="relative w-full lg:w-64">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gray-400 text-[20px]">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg leading-5 bg-white dark:bg-background-dark text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm" placeholder="Search Company or Ticker" type="text"/>
+</div>
+<div class="flex flex-1 w-full gap-3 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+<select class="form-select block pl-3 pr-10 py-2.5 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-lg bg-white dark:bg-background-dark text-gray-900 dark:text-white min-w-[140px]">
+<option>Last 7 Days</option>
+<option>Last 30 Days</option>
+<option>Custom Range</option>
+</select>
+<select class="form-select block pl-3 pr-10 py-2.5 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-lg bg-white dark:bg-background-dark text-gray-900 dark:text-white min-w-[140px]">
+<option>All Markets</option>
+<option>KOSPI</option>
+<option>KOSDAQ</option>
+</select>
+<select class="form-select block pl-3 pr-10 py-2.5 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-lg bg-white dark:bg-background-dark text-gray-900 dark:text-white min-w-[140px]">
+<option>All Statuses</option>
+<option>Ready</option>
+<option>Processing</option>
+<option>Failed</option>
+</select>
+</div>
+<div class="flex items-center gap-2 border-l border-gray-200 dark:border-border-dark pl-4 hidden lg:flex">
+<button class="p-2 text-gray-500 hover:text-primary transition-colors" title="Export CSV">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+<button class="p-2 text-gray-500 hover:text-primary transition-colors" title="Refresh Data">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-white dark:bg-surface-dark border border-gray-200 dark:border-border-dark rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-gray-200 dark:divide-border-dark">
+<thead class="bg-gray-50 dark:bg-black/20">
+<tr>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" scope="col">Report ID</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" scope="col">Company</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" scope="col">Market</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" scope="col">Analysis Date</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" scope="col">Recommendation</th>
+<th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" scope="col">Status</th>
+<th class="relative px-6 py-4" scope="col"><span class="sr-only">Actions</span></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-200 dark:divide-border-dark bg-white dark:bg-surface-dark">
+<!-- Row 1 -->
+<tr class="group hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">#R-2023-892</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs mr-3">SE</div>
+<div>
+<div class="text-sm font-semibold text-gray-900 dark:text-white">Samsung Electronics</div>
+<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">005930</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                                KOSPI
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            Oct 27, 2023
+                                        </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/30">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                                STRONG BUY
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-primary dark:text-primary font-medium">
+<span class="material-symbols-outlined text-[18px] mr-1.5">check_circle</span>
+                                                Ready
+                                            </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-gray-400 hover:text-primary transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-background-dark">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">#R-2023-891</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold text-xs mr-3">EB</div>
+<div>
+<div class="text-sm font-semibold text-gray-900 dark:text-white">EcoPro BM</div>
+<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">247540</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                                KOSDAQ
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            Oct 26, 2023
+                                        </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800/30">
+<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                                                HOLD
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-primary dark:text-primary font-medium">
+<span class="material-symbols-outlined text-[18px] mr-1.5">check_circle</span>
+                                                Ready
+                                            </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-gray-400 hover:text-primary transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-background-dark">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">#R-2023-890</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center font-bold text-xs mr-3">SH</div>
+<div>
+<div class="text-sm font-semibold text-gray-900 dark:text-white">SK Hynix</div>
+<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">000660</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                                KOSPI
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            Oct 26, 2023
+                                        </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-pulse"></span>
+                                                CALCULATING
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-orange-400 font-medium">
+<span class="material-symbols-outlined text-[18px] mr-1.5 animate-spin">sync</span>
+                                                Processing
+                                            </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-gray-300 cursor-not-allowed p-1 rounded-md" disabled="">
+<span class="material-symbols-outlined text-[20px]">visibility_off</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">#R-2023-889</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs mr-3">NC</div>
+<div>
+<div class="text-sm font-semibold text-gray-900 dark:text-white">Naver Corp</div>
+<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">035420</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                                KOSPI
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            Oct 25, 2023
+                                        </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/30">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                                BUY
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-primary dark:text-primary font-medium">
+<span class="material-symbols-outlined text-[18px] mr-1.5">check_circle</span>
+                                                Ready
+                                            </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-gray-400 hover:text-primary transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-background-dark">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="group hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">#R-2023-888</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold text-xs mr-3">KP</div>
+<div>
+<div class="text-sm font-semibold text-gray-900 dark:text-white">Kakao Pay</div>
+<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">377300</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                                KOSPI
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            Oct 25, 2023
+                                        </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/30">
+<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                SELL
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-primary dark:text-primary font-medium">
+<span class="material-symbols-outlined text-[18px] mr-1.5">check_circle</span>
+                                                Ready
+                                            </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-gray-400 hover:text-primary transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-background-dark">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="group hover:bg-gray-50 dark:hover:bg-surface-hover transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">#R-2023-887</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="size-8 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs mr-3">LM</div>
+<div>
+<div class="text-sm font-semibold text-gray-900 dark:text-white">L&amp;F Co Ltd</div>
+<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">066970</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                                KOSDAQ
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                            Oct 24, 2023
+                                        </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-400 border border-gray-300 dark:border-gray-700">
+<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                                ERROR
+                                            </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-red-500 font-medium group/error relative">
+<span class="material-symbols-outlined text-[18px] mr-1.5">error</span>
+                                                Failed
+                                            </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-background-dark">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="bg-white dark:bg-surface-dark px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-border-dark sm:px-6">
+<div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+<div>
+<p class="text-sm text-gray-700 dark:text-gray-400">
+                                        Showing
+                                        <span class="font-medium text-gray-900 dark:text-white">1</span>
+                                        to
+                                        <span class="font-medium text-gray-900 dark:text-white">6</span>
+                                        of
+                                        <span class="font-medium text-gray-900 dark:text-white">1240</span>
+                                        results
+                                    </p>
+</div>
+<div>
+<nav aria-label="Pagination" class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+<a class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-border-dark bg-white dark:bg-surface-dark text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-surface-hover" href="#">
+<span class="sr-only">Previous</span>
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</a>
+<a aria-current="page" class="z-10 bg-primary/10 border-primary text-primary relative inline-flex items-center px-4 py-2 border text-sm font-bold" href="#">
+                                            1
+                                        </a>
+<a class="bg-white dark:bg-surface-dark border-gray-300 dark:border-border-dark text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-surface-hover relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">
+                                            2
+                                        </a>
+<a class="bg-white dark:bg-surface-dark border-gray-300 dark:border-border-dark text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-surface-hover hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium" href="#">
+                                            3
+                                        </a>
+<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-border-dark bg-white dark:bg-surface-dark text-sm font-medium text-gray-700 dark:text-gray-400">
+                                            ...
+                                        </span>
+<a class="bg-white dark:bg-surface-dark border-gray-300 dark:border-border-dark text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-surface-hover hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium" href="#">
+                                            8
+                                        </a>
+<a class="bg-white dark:bg-surface-dark border-gray-300 dark:border-border-dark text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-surface-hover relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">
+                                            9
+                                        </a>
+<a class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-border-dark bg-white dark:bg-surface-dark text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-surface-hover" href="#">
+<span class="sr-only">Next</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

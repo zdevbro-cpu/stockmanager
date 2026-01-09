@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Signals - StockManager</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1f96ad",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#121e20",
+                        "surface-dark": "#1a2628",
+                        "surface-light": "#ffffff",
+                        "buy": "#2ECC71",
+                        "sell": "#E74C3C",
+                        "wait": "#F39C12",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem", "2xl": "1rem" },
+                    boxShadow: {
+                        'glow-buy': '0 0 10px rgba(46, 204, 113, 0.2)',
+                        'glow-sell': '0 0 10px rgba(231, 76, 60, 0.2)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for horizontal scrolling */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Subtle grid pattern for technical feel */
+        .bg-grid-pattern {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased overflow-x-hidden">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark border-x border-white/5 shadow-2xl overflow-hidden">
+<!-- Header -->
+<header class="flex items-center justify-between px-5 pt-6 pb-2 bg-background-light dark:bg-background-dark z-10 sticky top-0 backdrop-blur-md bg-opacity-90 dark:bg-opacity-90">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[28px]">insights</span>
+<h1 class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">Signals</h1>
+</div>
+<p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 font-mono">KOSPI / KOSDAQ MARKET</p>
+</div>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-gray-900 dark:text-white">search</span>
+</button>
+</header>
+<!-- Horizon Tabs -->
+<div class="px-0 pt-2 pb-0 sticky top-[72px] z-10 bg-background-light dark:bg-background-dark">
+<div class="flex border-b border-gray-200 dark:border-white/10 px-5 gap-8">
+<button class="flex flex-col items-center justify-center pb-3 pt-2 relative group">
+<span class="text-sm font-bold text-primary">1 Day</span>
+<div class="absolute bottom-0 w-full h-[3px] bg-primary rounded-t-full shadow-[0_-2px_6px_rgba(31,150,173,0.4)]"></div>
+</button>
+<button class="flex flex-col items-center justify-center pb-3 pt-2 relative group">
+<span class="text-sm font-bold text-gray-400 group-hover:text-gray-200 transition-colors">3 Days</span>
+<div class="absolute bottom-0 w-full h-[3px] bg-transparent rounded-t-full"></div>
+</button>
+<button class="flex flex-col items-center justify-center pb-3 pt-2 relative group">
+<span class="text-sm font-bold text-gray-400 group-hover:text-gray-200 transition-colors">1 Week</span>
+<div class="absolute bottom-0 w-full h-[3px] bg-transparent rounded-t-full"></div>
+</button>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="w-full overflow-x-auto hide-scrollbar py-4 pl-5 pr-2 bg-grid-pattern">
+<div class="flex gap-3">
+<button class="flex items-center gap-2 h-9 px-4 rounded-full bg-primary text-white shadow-lg shadow-primary/20 shrink-0 border border-transparent">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+<span class="text-xs font-bold uppercase tracking-wider">Watchlist</span>
+</button>
+<button class="flex items-center gap-2 h-9 px-4 rounded-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/10 shrink-0">
+<span class="material-symbols-outlined text-[18px] text-gray-400">filter_list</span>
+<span class="text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type: All</span>
+</button>
+<button class="flex items-center gap-2 h-9 px-4 rounded-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/10 shrink-0 opacity-60">
+<span class="text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Market Cap</span>
+<span class="material-symbols-outlined text-[16px] text-gray-400">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<!-- Signal List -->
+<div class="flex flex-col px-5 pb-32 gap-4 bg-grid-pattern min-h-screen">
+<!-- Card 1: BUY High Confidence -->
+<div class="group relative overflow-hidden rounded-xl bg-white dark:bg-surface-dark border-l-4 border-buy shadow-sm dark:shadow-none">
+<div class="absolute top-0 right-0 p-3 opacity-10">
+<span class="material-symbols-outlined text-6xl text-buy rotate-[-15deg]">trending_up</span>
+</div>
+<div class="p-4 flex flex-col gap-3 relative z-10">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Samsung Elec</h3>
+<span class="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded">005930</span>
+</div>
+<span class="text-xs text-buy font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+                                Golden Cross
+                            </span>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1.5 bg-buy/10 px-2.5 py-1 rounded shadow-glow-buy backdrop-blur-sm border border-buy/20">
+<span class="w-2 h-2 rounded-full bg-buy animate-pulse"></span>
+<span class="text-xs font-bold text-buy uppercase tracking-wider">BUY</span>
+</div>
+<span class="text-[10px] text-gray-400 mt-1 font-mono">14:30 KST</span>
+</div>
+</div>
+<div class="mt-2 pt-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">Confidence</span>
+<div class="flex items-baseline gap-1">
+<span class="text-xl font-bold text-primary font-mono">85%</span>
+<span class="text-[10px] text-primary/60">High</span>
+</div>
+</div>
+<!-- Mini sparkline simulation -->
+<div class="h-8 w-24 flex items-end gap-0.5 opacity-80">
+<div class="w-1 bg-gray-700 h-[40%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[60%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[50%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[70%] rounded-sm"></div>
+<div class="w-1 bg-buy h-[90%] rounded-sm shadow-[0_0_8px_rgba(46,204,113,0.5)]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: SELL Volatility -->
+<div class="group relative overflow-hidden rounded-xl bg-white dark:bg-surface-dark border-l-4 border-sell shadow-sm dark:shadow-none opacity-90">
+<div class="p-4 flex flex-col gap-3 relative z-10">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">SK Hynix</h3>
+<span class="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded">000660</span>
+</div>
+<span class="text-xs text-sell font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                Volatility Spike
+                            </span>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1.5 bg-sell/10 px-2.5 py-1 rounded border border-sell/20">
+<span class="w-2 h-2 rounded-full bg-sell"></span>
+<span class="text-xs font-bold text-sell uppercase tracking-wider">SELL</span>
+</div>
+<span class="text-[10px] text-gray-400 mt-1 font-mono">11:15 KST</span>
+</div>
+</div>
+<div class="mt-2 pt-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">Confidence</span>
+<div class="flex items-baseline gap-1">
+<span class="text-xl font-bold text-gray-300 font-mono">60%</span>
+<span class="text-[10px] text-gray-500">Med</span>
+</div>
+</div>
+<!-- Mini sparkline simulation -->
+<div class="h-8 w-24 flex items-end gap-0.5 opacity-60">
+<div class="w-1 bg-gray-700 h-[80%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[90%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[60%] rounded-sm"></div>
+<div class="w-1 bg-sell h-[40%] rounded-sm"></div>
+<div class="w-1 bg-sell h-[30%] rounded-sm"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: WAIT Neutral -->
+<div class="group relative overflow-hidden rounded-xl bg-white dark:bg-surface-dark border-l-4 border-wait shadow-sm dark:shadow-none opacity-80">
+<div class="p-4 flex flex-col gap-3 relative z-10">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">LG Energy Sol</h3>
+<span class="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded">373220</span>
+</div>
+<span class="text-xs text-wait font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">horizontal_rule</span>
+                                Consolidating
+                            </span>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1.5 bg-wait/10 px-2.5 py-1 rounded border border-wait/20">
+<span class="text-xs font-bold text-wait uppercase tracking-wider">WAIT</span>
+</div>
+<span class="text-[10px] text-gray-400 mt-1 font-mono">09:45 KST</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: BUY Breakout -->
+<div class="group relative overflow-hidden rounded-xl bg-white dark:bg-surface-dark border-l-4 border-buy shadow-sm dark:shadow-none">
+<div class="p-4 flex flex-col gap-3 relative z-10">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 mb-1">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">Naver</h3>
+<span class="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded">035420</span>
+</div>
+<span class="text-xs text-buy font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">arrow_outward</span>
+                                Vol Breakout
+                            </span>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1.5 bg-buy/10 px-2.5 py-1 rounded border border-buy/20">
+<span class="w-2 h-2 rounded-full bg-buy"></span>
+<span class="text-xs font-bold text-buy uppercase tracking-wider">BUY</span>
+</div>
+<span class="text-[10px] text-gray-400 mt-1 font-mono">14:10 KST</span>
+</div>
+</div>
+<div class="mt-2 pt-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">Confidence</span>
+<div class="flex items-baseline gap-1">
+<span class="text-xl font-bold text-primary font-mono">78%</span>
+<span class="text-[10px] text-primary/60">High</span>
+</div>
+</div>
+<!-- Mini sparkline simulation -->
+<div class="h-8 w-24 flex items-end gap-0.5 opacity-80">
+<div class="w-1 bg-gray-700 h-[20%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[25%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[22%] rounded-sm"></div>
+<div class="w-1 bg-gray-700 h-[40%] rounded-sm"></div>
+<div class="w-1 bg-buy h-[75%] rounded-sm"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Detail Drawer (Simulated Open State) -->
+<!-- In a real app, this would be fixed and transform-translate-y controlled. Here it simulates 'peeking' or fully open -->
+<div class="fixed bottom-0 left-0 right-0 z-50">
+<!-- Backdrop Blur Gradient -->
+<div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background-dark to-transparent pointer-events-none"></div>
+<!-- Drawer Content -->
+<div class="relative bg-[#152023] dark:bg-[#152023] border-t border-white/10 rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] max-w-md mx-auto transform transition-transform duration-300">
+<!-- Drag Handle -->
+<div class="w-full flex justify-center pt-3 pb-1">
+<div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
+</div>
+<div class="p-6 pt-2 pb-8">
+<!-- Drawer Header -->
+<div class="flex justify-between items-start mb-6">
+<div>
+<div class="flex items-baseline gap-2">
+<h2 class="text-2xl font-bold text-white">Samsung Elec</h2>
+<span class="text-sm font-mono text-gray-400">005930</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-3xl font-mono font-medium text-white">₩72,800</span>
+<span class="text-sm font-bold text-buy flex items-center bg-buy/10 px-1.5 rounded">
+<span class="material-symbols-outlined text-[16px]">arrow_drop_up</span>
+                                    1.2%
+                                </span>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-primary border border-white/5">
+<span class="material-symbols-outlined fill-1">star</span>
+</button>
+</div>
+<!-- Chart Placeholder -->
+<div class="w-full h-32 bg-surface-dark/50 rounded-lg border border-white/5 mb-6 relative overflow-hidden group">
+<img alt="Line chart showing stock price trend upwards with green accent" class="w-full h-full object-cover opacity-80 mix-blend-screen" data-alt="Abstract rising green line chart on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFXSikBuniyGIPkn15v7fuPRlOFVhhDjBPuUf5KUQ_W-Ko8vYZwbqtzP0YSoqfTmj2He-g43K80RDtYoABDvEYwbBqVmIfyot964tTej6CsJOv-4v9tPf_Q1Q9xyihjmB2DXT0En-PaVjYUYK2yXZ6-k7iEOLKAUjCzkgaX2vAH1Jf5yatOrIgSYUh_e4GBkIRO-IK9agqNEWkdqAsPlfix9-CNzXzMPfPUinoe3OGHcuGMDoIBinDfhZ0eo_qyyjMQetgjPkNxQ"/>
+<!-- Overlay data point simulation -->
+<div class="absolute top-4 left-8 flex flex-col">
+<span class="text-[10px] text-gray-500 uppercase tracking-widest">Trigger</span>
+<span class="text-sm font-bold text-buy">Golden Cross</span>
+</div>
+</div>
+<!-- History Timeline -->
+<div class="flex flex-col gap-4">
+<h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Signal History</h4>
+<div class="relative pl-4 border-l border-white/10 space-y-6">
+<!-- Timeline Item 1 -->
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-buy border-2 border-[#152023]"></div>
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white">Buy Signal</span>
+<span class="text-xs text-gray-400">Moving Average Crossover</span>
+</div>
+<span class="text-xs font-mono text-gray-500">Today</span>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-gray-600 border-2 border-[#152023]"></div>
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-gray-400">Wait</span>
+<span class="text-xs text-gray-500">Sideways Movement</span>
+</div>
+<span class="text-xs font-mono text-gray-500">2 days ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full mt-8 py-3.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2">
+<span>Execute Trade</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

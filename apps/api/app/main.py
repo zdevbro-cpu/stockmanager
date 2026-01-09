@@ -27,3 +27,7 @@ app.include_router(recommendations_router)
 app.include_router(signals_router)
 app.include_router(watchlists_router)
 app.include_router(reports_router)
+from .routers.ingest import router as ingest_router
+app.include_router(ingest_router)
+from .routers.market import router as market_router
+app.include_router(market_router)

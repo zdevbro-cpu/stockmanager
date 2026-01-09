@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     ECOS_API_KEY: str | None = None
 
     GCS_BUCKET: str | None = None
+    GOOGLE_API_KEY: str | None = None
     LOG_LEVEL: str = "INFO"
 
 

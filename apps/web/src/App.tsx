@@ -1,28 +1,41 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { AppShell } from "./components/layout/AppShell";
-import HomePage from "./pages/Home";
-import ScreenerPage from "./pages/Screener";
-import RecommendationsPage from "./pages/Recommendations";
-import SignalsPage from "./pages/Signals";
-import WatchlistPage from "./pages/Watchlist";
-import ReportsPage from "./pages/Reports";
-import SettingsPage from "./pages/Settings";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
+import Screener from './pages/Screener'
+import Recommendations from './pages/Recommendations'
+import Signals from './pages/Signals'
+import Watchlist from './pages/Watchlist'
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+import Themes from './pages/Themes';
+import Industries from './pages/Industries';
+import Layout from './Layout'
+import { SettingsProvider } from './contexts/SettingsContext'
 
-const App = () => {
-  return (
-    <AppShell>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/screener" element={<ScreenerPage />} />
-        <Route path="/recommendations" element={<RecommendationsPage />} />
-        <Route path="/signals" element={<SignalsPage />} />
-        <Route path="/watchlist" element={<WatchlistPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AppShell>
-  );
-};
+const queryClient = new QueryClient()
 
-export default App;
+function App() {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <SettingsProvider>
+                <BrowserRouter>
+                    <Routes>
+                        <Route element={<Layout />}>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/screener" element={<Screener />} />
+                            <Route path="/recommendations" element={<Recommendations />} />
+                            <Route path="/signals" element={<Signals />} />
+                            <Route path="/watchlist" element={<Watchlist />} />
+                            <Route path="/reports" element={<Reports />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/themes" element={<Themes />} />
+                            <Route path="/industries" element={<Industries />} />
+                        </Route>
+                    </Routes>
+                </BrowserRouter>
+            </SettingsProvider>
+        </QueryClientProvider>
+    )
+}
+
+export default App
