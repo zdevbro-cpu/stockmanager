@@ -31,3 +31,5 @@ from .routers.ingest import router as ingest_router
 app.include_router(ingest_router)
 from .routers.market import router as market_router
 app.include_router(market_router)
+from .routers.financials.main import router as financials_router
+app.include_router(financials_router)
