@@ -1,0 +1,74 @@
+{
+  "template_version": "1.1.0",
+  "sections": [
+    {
+      "key": "EXEC_SUMMARY",
+      "required": true
+    },
+    {
+      "key": "COMPANY_PROBLEM_SOLUTION",
+      "required": true
+    },
+    {
+      "key": "MARKET",
+      "required": true
+    },
+    {
+      "key": "COMPETITION",
+      "required": true
+    },
+    {
+      "key": "BM_GTM",
+      "required": true
+    },
+    {
+      "key": "TRACTION",
+      "required": true
+    },
+    {
+      "key": "TEAM",
+      "required": true
+    },
+    {
+      "key": "FINANCIALS_FUNDRAISING",
+      "required": true,
+      "auto_blocks": [
+        {
+          "type": "table",
+          "source": "fs_mart_annual",
+          "limit": 3
+        },
+        {
+          "type": "table",
+          "source": "fs_ratio_mart",
+          "period_type": "ANNUAL",
+          "limit": 3
+        },
+        {
+          "type": "chart",
+          "source": "chart_cache",
+          "chart_key": "FIN_IS_ANNUAL_3Y"
+        }
+      ]
+    },
+    {
+      "key": "DEAL_VALUATION",
+      "required": true
+    },
+    {
+      "key": "RISKS_DD",
+      "required": true,
+      "auto_blocks": [
+        {
+          "type": "list",
+          "source": "kind_market_action",
+          "limit": 20
+        }
+      ]
+    },
+    {
+      "key": "APPENDIX",
+      "required": false
+    }
+  ]
+}
