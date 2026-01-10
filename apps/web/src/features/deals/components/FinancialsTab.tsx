@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { createApiClient } from '../../../../lib/apiClient';
-import { useSettings } from '../../../../contexts/SettingsContext';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { createApiClient } from '../../../lib/apiClient';
+import { useSettings } from '../../../contexts/SettingsContext';
+import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import clsx from 'clsx';
 
 interface FinancialsProps {
@@ -66,15 +66,19 @@ export default function FinancialsTab({ companyId }: FinancialsProps) {
                     <div className="h-[250px] w-full text-xs">
                         {chartData ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData}>
-                                    <XAxis dataKey="name" stroke="#666" />
-                                    <YAxis stroke="#666" />
-                                    <Tooltip contentStyle={{ backgroundColor: '#1a2232', borderColor: '#333' }} />
+                                <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                                    <XAxis dataKey="name" stroke="#9ca3af" tick={{ fontSize: 12 }} />
+                                    <YAxis stroke="#9ca3af" tick={{ fontSize: 12 }} tickFormatter={(val) => `${(val / 100000000).toLocaleString()}억`} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1a2232', borderColor: '#333', color: '#fff' }}
+                                        formatter={(value: any) => [`${(value / 100000000).toLocaleString()}억원`, ""]}
+                                    />
                                     <Legend />
-                                    <Bar dataKey="매출액" fill="#3b82f6" name="매출" />
-                                    <Bar dataKey="영업이익" fill="#10b981" name="영업이익" />
-                                    <Bar dataKey="순이익" fill="#8b5cf6" name="순이익" />
-                                </BarChart>
+                                    <Bar dataKey="매출액" fill="#3b82f6" name="매출액" barSize={40} />
+                                    <Line type="monotone" dataKey="영업이익" stroke="#10b981" strokeWidth={2} name="영업이익" dot={{ r: 4 }} />
+                                    <Line type="monotone" dataKey="순이익" stroke="#8b5cf6" strokeWidth={2} name="순이익" dot={{ r: 4 }} />
+                                </ComposedChart>
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex h-full items-center justify-center text-gray-600">No Chart Data</div>
@@ -88,21 +92,31 @@ export default function FinancialsTab({ companyId }: FinancialsProps) {
                         <table className="w-full text-sm text-right">
                             <thead className="text-gray-400 border-b border-gray-700">
                                 <tr>
-                                    <th className="py-2 text-left">Year</th>
-                                    <th className="py-2">자산</th>
-                                    <th className="py-2">부채</th>
-                                    <th className="py-2">자본</th>
+                                    <th className="py-2 text-left bg-gray-800/50 pl-2">구분</th>
+                                    {summary_3y.map((row: any) => (
+                                        <th key={row.fiscal_year} className="py-2 px-2">{row.fiscal_year}년</th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800">
-                                {summary_3y.map((row: any) => (
-                                    <tr key={row.fiscal_year}>
-                                        <td className="py-3 text-left font-bold text-white">{row.fiscal_year}</td>
-                                        <td className="py-3">{(row.assets / 100000000).toLocaleString()}</td>
-                                        <td className="py-3">{(row.liabilities / 100000000).toLocaleString()}</td>
-                                        <td className="py-3 font-bold text-blue-400">{(row.equity / 100000000).toLocaleString()}</td>
-                                    </tr>
-                                ))}
+                                <tr>
+                                    <td className="py-3 text-left font-bold text-gray-300 pl-2">자산</td>
+                                    {summary_3y.map((row: any) => (
+                                        <td key={row.fiscal_year} className="py-3 px-2">{(row.assets / 100000000).toLocaleString()}</td>
+                                    ))}
+                                </tr>
+                                <tr>
+                                    <td className="py-3 text-left font-bold text-gray-300 pl-2">부채</td>
+                                    {summary_3y.map((row: any) => (
+                                        <td key={row.fiscal_year} className="py-3 px-2">{(row.liabilities / 100000000).toLocaleString()}</td>
+                                    ))}
+                                </tr>
+                                <tr className="bg-blue-500/5">
+                                    <td className="py-3 text-left font-bold text-blue-300 pl-2">자본</td>
+                                    {summary_3y.map((row: any) => (
+                                        <td key={row.fiscal_year} className="py-3 px-2 font-bold text-blue-400">{(row.equity / 100000000).toLocaleString()}</td>
+                                    ))}
+                                </tr>
                             </tbody>
                         </table>
                     </div>
