@@ -11,8 +11,14 @@ from ..services.report_service import generate_ai_report
 router = APIRouter(tags=["Reports"])
 
 
+from fastapi import Response
+
 @router.get("/reports")
-def list_reports(db: Session = Depends(get_db)):
+def list_reports(response: Response, db: Session = Depends(get_db)):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    
     stmt = text("""
         SELECT r.report_id, r.company_id, c.name_ko as company_name, r.template, r.status, r.created_at 
         FROM report_request r
@@ -39,38 +45,97 @@ def get_report_content(report_id: int, db: Session = Depends(get_db)):
     
     company_id, status = row
     if status != 'DONE':
-        return {"id": report_id, "status": status, "content": f"보고서 생성 중입니다... (현재 상태: {status})"}
+        return {"id": report_id, "status": status, "company_id": company_id, "content": f"보고서 생성 중입니다... (현재 상태: {status})"}
 
     import os
     # Use absolute path to project root
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
-    file_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.md")
     
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
+    # Check for MD file first (new format - for preview)
+    md_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.md")
+    if os.path.exists(md_path):
+        with open(md_path, "r", encoding="utf-8") as f:
             content = f.read()
-        return {"id": report_id, "status": status, "content": content}
+        return {"id": report_id, "status": status, "company_id": company_id, "content": content, "format": "markdown"}
     
-    return {"id": report_id, "status": status, "content": "보고서 파일이 서버에 존재하지 않습니다."}
+    # Fallback: Check for DOCX file
+    docx_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.docx")
+    if os.path.exists(docx_path):
+        return {
+            "id": report_id, 
+            "status": status, 
+            "company_id": company_id, 
+            "content": "# 보고서 미리보기 불가\n\n이 보고서는 다운로드 전용 형식(DOCX)으로 생성되었습니다.\n\n우측 상단의 **다운로드 버튼**을 클릭하여 확인하세요.",
+            "format": "docx"
+        }
+    
+    return {"id": report_id, "status": status, "company_id": company_id, "content": "보고서 파일이 서버에 존재하지 않습니다.", "format": "none"}
+
+@router.get("/reports/{report_id}/download")
+def download_report(report_id: int, db: Session = Depends(get_db)):
+    """Download DOCX report file"""
+    from fastapi.responses import FileResponse
+    import os
+    
+    # Check if report exists
+    stmt = text("SELECT status FROM report_request WHERE report_id = :rid")
+    row = db.execute(stmt, {"rid": report_id}).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    status = row[0]
+    if status != 'DONE':
+        raise HTTPException(status_code=400, detail=f"Report not ready. Current status: {status}")
+    
+    # Find DOCX file
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+    file_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.docx")
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Report file not found on server")
+    
+    return FileResponse(
+        path=file_path,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=f"investment_report_{report_id}.docx"
+    )
 
 @router.delete("/reports/{report_id}")
-def delete_report(report_id: int, db: Session = Depends(get_db)):
+def delete_report(report_id: int, _user=Depends(get_current_user), db: Session = Depends(get_db)):
     # 1. Get info before delete
     stmt = text("SELECT company_id FROM report_request WHERE report_id = :rid")
     row = db.execute(stmt, {"rid": report_id}).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Report not found")
     
-    # 2. Delete from DB
+    # 2. Delete dependents (artifacts) first to satisfy FK constraints
+    db.execute(text("DELETE FROM report_artifact WHERE report_id = :rid"), {"rid": report_id})
+    
+    # 3. Delete from DB
     db.execute(text("DELETE FROM report_request WHERE report_id = :rid"), {"rid": report_id})
     db.commit()
 
-    # 3. Attempt to delete physical file
+    # 4. Attempt to delete physical files (both DOCX and MD)
     import os
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
-    file_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.md")
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    
+    # Try to delete DOCX file
+    docx_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.docx")
+    try:
+        if os.path.exists(docx_path):
+            os.remove(docx_path)
+            print(f"Deleted DOCX file: {docx_path}")
+    except Exception as e:
+        print(f"DOCX file deletion failed: {e}")
+    
+    # Try to delete MD file (legacy)
+    md_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.md")
+    try:
+        if os.path.exists(md_path):
+            os.remove(md_path)
+            print(f"Deleted MD file: {md_path}")
+    except Exception as e:
+        print(f"MD file deletion failed: {e}")
     
     return {"message": "Report deleted successfully"}
 
@@ -91,8 +156,8 @@ def create_report(req: ReportRequestCreate, background_tasks: BackgroundTasks, _
     report_id = result.fetchone()[0]
     db.commit()
 
-    # 2. Enqueue AI generation task
-    background_tasks.add_task(generate_ai_report, db, req.company_id, report_id)
+    # 2. Enqueue AI generation task (It will create its own session)
+    background_tasks.add_task(generate_ai_report, req.company_id, report_id)
 
     return {
         "report_id": report_id,
