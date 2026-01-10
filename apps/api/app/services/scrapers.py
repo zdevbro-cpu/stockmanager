@@ -2,13 +2,17 @@ import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+}
+
 def fetch_leading_stock(sub_url_suffix):
     """
     Fetch the leading stock (highest change rate) from the theme detail page.
     """
     try:
         url = f"https://finance.naver.com{sub_url_suffix}"
-        resp = requests.get(url, timeout=3)
+        resp = requests.get(url, headers=HEADERS, timeout=10)
         resp.encoding = 'euc-kr'
         soup = BeautifulSoup(resp.text, "html.parser")
         
@@ -37,7 +41,7 @@ def fetch_theme_page(page):
     """
     url = f"https://finance.naver.com/sise/theme.nhn?&page={page}"
     try:
-        resp = requests.get(url, timeout=3)
+        resp = requests.get(url, headers=HEADERS, timeout=10)
         resp.encoding = 'euc-kr'
         soup = BeautifulSoup(resp.text, "html.parser")
         table = soup.select_one("table.type_1")
@@ -116,7 +120,7 @@ def get_naver_industries():
     """
     url = "https://finance.naver.com/sise/sise_group.nhn?type=upjong"
     try:
-        resp = requests.get(url, timeout=5)
+        resp = requests.get(url, headers=HEADERS, timeout=10)
         resp.encoding = 'euc-kr'
         soup = BeautifulSoup(resp.text, "html.parser")
         

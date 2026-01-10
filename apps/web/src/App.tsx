@@ -9,6 +9,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Themes from './pages/Themes';
 import Industries from './pages/Industries';
+import Popular from './pages/Popular';
 import Layout from './Layout'
 import { SettingsProvider } from './contexts/SettingsContext'
 
@@ -30,6 +31,7 @@ function App() {
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/themes" element={<Themes />} />
                             <Route path="/industries" element={<Industries />} />
+                            <Route path="/popular" element={<Popular />} />
                         </Route>
                     </Routes>
                 </BrowserRouter>

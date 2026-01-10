@@ -107,7 +107,7 @@ def get_popular_searches():
     
     results = []
     if data:
-        for idx, item in enumerate(data[:10]): # Top 10
+        for idx, item in enumerate(data[:12]): # Top 12
             change_rate = float(item['prdy_ctrt'])
             results.append({
                 "rank": idx + 1,
@@ -115,6 +115,25 @@ def get_popular_searches():
                 "price": format(int(item['stck_prpr']), ","),
                 "changePercent": f"{change_rate:+.2f}%",
                 "up": change_rate > 0
+            })
+    return results
+
+@router.get("/popular-searches/all")
+def get_all_popular_searches():
+    # Use Volume Rank as proxy for popular searches
+    data = kis.get_volume_rank()
+    
+    results = []
+    if data:
+        for idx, item in enumerate(data[:50]): # Top 50 for full page
+            change_rate = float(item['prdy_ctrt'])
+            results.append({
+                "rank": idx + 1,
+                "name": item['hts_kor_isnm'],
+                "price": format(int(item['stck_prpr']), ","),
+                "changePercent": f"{change_rate:+.2f}%",
+                "up": change_rate > 0,
+                "volume": format(int(item['acml_vol']), ",")
             })
     return results
 

@@ -54,6 +54,19 @@ export const usePopularSearches = () => {
     });
 };
 
+export const useAllPopularSearches = () => {
+    const { isDemoMode, apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['allPopularSearches'],
+        queryFn: async () => {
+            if (isDemoMode) return POPULAR_SEARCHES; // Mock fallback
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/popular-searches/all');
+            return data;
+        },
+    });
+};
+
 export const useThemeRankings = () => {
     const { isDemoMode, apiBaseUrl } = useSettings();
     return useQuery({

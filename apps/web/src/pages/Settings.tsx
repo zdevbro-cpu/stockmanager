@@ -38,6 +38,11 @@ export default function Settings() {
                 duration: '-',
                 rowCount: j.row_count
             }));
+
+            // Sort order: ECOS -> KRX -> Mapping -> DART -> DART Financials
+            const order = ['ecos', 'krx', 'mapping', 'dart', 'dart_financials'];
+            data.sort((a: any, b: any) => order.indexOf(a.id) - order.indexOf(b.id));
+
             setJobs(data);
         } catch (error) {
             console.error("Failed to fetch initial status", error);

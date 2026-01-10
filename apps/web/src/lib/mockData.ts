@@ -21,6 +21,8 @@ export const POPULAR_SEARCHES = [
     { rank: 8, name: 'NAVER', price: '210,000', up: false },
     { rank: 9, name: '카카오', price: '54,300', up: true },
     { rank: 10, name: '두산로보틱스', price: '85,400', up: true },
+    { rank: 11, name: '기업은행', price: '12,500', up: true },
+    { rank: 12, name: '셀트리온', price: '182,000', up: false },
 ]
 
 export const THEME_RANKINGS = [

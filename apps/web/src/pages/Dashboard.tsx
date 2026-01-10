@@ -162,10 +162,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Right: Popular Searches */}
-                <div className="bg-card-dark border border-border-dark rounded-xl p-4 flex flex-col">
+                <div className="bg-card-dark border border-border-dark rounded-xl p-4 flex flex-col min-h-[480px]">
                     <div className="flex items-center justify-between mb-4 pb-2 border-b border-border-dark">
                         <h3 className="text-white font-bold">인기 검색 종목</h3>
-                        <button className="text-xs text-text-subtle hover:text-white">더보기</button>
+                        <Link to="/popular" className="text-xs text-text-subtle hover:text-white">더보기</Link>
                     </div>
                     <ul className="flex flex-col gap-2 overflow-y-auto">
                         {popular?.map((item: any) => (
