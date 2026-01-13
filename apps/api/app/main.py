@@ -33,3 +33,8 @@ from .routers.market import router as market_router
 app.include_router(market_router)
 from .routers.financials.main import router as financials_router
 app.include_router(financials_router)
+
+from .routers.documents import router as documents_router
+app.include_router(documents_router)
+
+# Server Reload Trigger: 2026-01-10 14:18

@@ -4,12 +4,12 @@ from ingest.db import SessionLocal
 from ingest.kis_client import KisClient
 from datetime import date
 
-def update_kis_prices_task(limit: int = 50):
+def update_kis_prices_task(limit: int | None = 50, offset: int = 0, kis: KisClient | None = None):
     """
     Fetch current prices for companies from KIS API and update 'price_daily' table.
     Commits every 10 items to ensure progress visibility.
     """
-    kis = KisClient()
+    kis = kis or KisClient()
     print(f"Starting KIS Price Update Task (Limit: {limit})...")
     
     with SessionLocal() as db:
@@ -18,9 +18,20 @@ def update_kis_prices_task(limit: int = 50):
                 SELECT s.ticker, c.company_id
                 FROM security s
                 JOIN company c ON s.company_id = c.company_id
+                ORDER BY s.ticker ASC
+                OFFSET :o
                 LIMIT :l
             """)
-            stocks = db.execute(stmt_get_stocks, {"l": limit}).fetchall()
+            if limit is None:
+                stmt_get_stocks = text("""
+                    SELECT s.ticker, c.company_id
+                    FROM security s
+                    JOIN company c ON s.company_id = c.company_id
+                    ORDER BY s.ticker ASC
+                """)
+                stocks = db.execute(stmt_get_stocks).fetchall()
+            else:
+                stocks = db.execute(stmt_get_stocks, {"l": limit, "o": offset}).fetchall()
             today = date.today()
             
             count = 0

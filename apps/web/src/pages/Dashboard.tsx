@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTopIndices, useInvestorTrends, usePopularSearches, useThemeRankings, useIndustryRankings, useRecommendations } from '../hooks/useStockData';
+import { useTopIndices, useInvestorTrends, usePopularSearches, useThemeRankings, useIndustryRankings, useIndexChart } from '../hooks/useStockData';
 
 export default function Dashboard() {
     const { data: indices } = useTopIndices();
@@ -14,35 +14,26 @@ export default function Dashboard() {
     // Add state for selected market
     const [selectedMarket, setSelectedMarket] = useState('KOSPI');
 
-    // Mock Chart Data Sets (to be replaced with API later)
-    const chartDataMap: Record<string, any[]> = {
-        'KOSPI': [
-            { time: '09:00', value: 2540 }, { time: '09:30', value: 2542 },
-            { time: '10:00', value: 2530 }, { time: '10:30', value: 2535 },
-            { time: '11:00', value: 2538 }, { time: '11:30', value: 2542 },
-            { time: '12:00', value: 2540 }, { time: '12:30', value: 2545 },
-            { time: '13:00', value: 2548 }, { time: '13:30', value: 2550 },
-            { time: '14:00', value: 2548 }, { time: '14:30', value: 2555 },
-            { time: '15:00', value: 2560 }, { time: '15:30', value: 2562 }
-        ],
-        'KOSDAQ': [
-            { time: '09:00', value: 860 }, { time: '09:30', value: 858 },
-            { time: '10:00', value: 855 }, { time: '10:30', value: 850 },
-            { time: '11:00', value: 852 }, { time: '11:30', value: 855 },
-            { time: '12:00', value: 858 }, { time: '12:30', value: 860 },
-            { time: '13:00', value: 862 }, { time: '13:30', value: 861 },
-            { time: '14:00', value: 863 }, { time: '14:30', value: 865 },
-            { time: '15:00', value: 868 }, { time: '15:30', value: 870 }
-        ],
-        'KOSPI200': [
-            { time: '09:00', value: 338 }, { time: '09:30', value: 339 },
-            { time: '10:00', value: 337 }, { time: '10:30', value: 338 },
-            { time: '11:00', value: 339 }, { time: '11:30', value: 340 },
-            { time: '12:00', value: 340 }, { time: '12:30', value: 341 },
-            { time: '13:00', value: 342 }, { time: '13:30', value: 342 },
-            { time: '14:00', value: 343 }, { time: '14:30', value: 344 },
-            { time: '15:00', value: 345 }, { time: '15:30', value: 346 }
+    const { data: indexChart } = useIndexChart(selectedMarket);
+    const chartData = Array.isArray(indexChart)
+        ? indexChart.map((item: any) => ({
+            time: item.date,
+            value: item.value,
+        }))
+        : [];
+    const chartDataWithFallback = chartData.length === 1
+        ? [
+            { time: `${chartData[0].time} 09:00`, value: chartData[0].value },
+            { time: `${chartData[0].time} 15:30`, value: chartData[0].value },
         ]
+        : chartData;
+    const formatChartTick = (value: string) => {
+        if (!value) return value;
+        if (value.includes(' ')) {
+            const parts = value.split(' ');
+            return parts[parts.length - 1];
+        }
+        return value;
     };
 
     return (
@@ -104,8 +95,13 @@ export default function Dashboard() {
 
                         {/* Chart Area */}
                         <div className="flex-1 w-full min-h-[250px] relative">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={chartDataMap[selectedMarket] || chartDataMap['KOSPI']}>
+                            {chartDataWithFallback.length === 0 ? (
+                                <div className="h-full flex items-center justify-center text-sm text-text-subtle">
+                                    지수 차트 데이터가 없습니다.
+                                </div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={chartDataWithFallback}>
                                     <defs>
                                         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor={selectedMarket === 'KOSPI' ? '#EF4444' : '#3B82F6'} stopOpacity={0.1} />
@@ -113,7 +109,14 @@ export default function Dashboard() {
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                    <XAxis dataKey="time" stroke="#666" fontSize={11} tickLine={false} axisLine={false} />
+                                    <XAxis
+                                        dataKey="time"
+                                        stroke="#666"
+                                        fontSize={11}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={formatChartTick}
+                                    />
                                     <YAxis domain={['auto', 'auto']} stroke="#666" fontSize={11} tickLine={false} axisLine={false} orientation="right" />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#1E1E1E', borderColor: '#333' }}
@@ -127,8 +130,9 @@ export default function Dashboard() {
                                         fill="url(#colorValue)"
                                         strokeWidth={2}
                                     />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
 
                         {/* Bottom Stats Grid (Mimicking Naver Finance) */}

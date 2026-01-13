@@ -19,8 +19,9 @@ def generate_financial_marts():
             # Note: Real implementation needs mapping table. Here we assume mapped codes.
             
             # Dummy implementation using standard SQL Pivot-like aggregation
+            # Dummy implementation using standard SQL Pivot-like aggregation
             stmt_annual = text("""
-                INSERT INTO fs_mart_annual (company_id, fiscal_year, revenue, op_income, net_income, assets, equity, generated_at)
+                INSERT INTO fs_mart_annual (company_id, fiscal_year, revenue, op_income, net_income, assets, liabilities, equity, generated_at)
                 SELECT 
                     company_id, 
                     fiscal_year,
@@ -28,6 +29,8 @@ def generate_financial_marts():
                     MAX(CASE WHEN account_code = 'OP' THEN amount ELSE 0 END) as op_income,
                     MAX(CASE WHEN account_code = 'NI' THEN amount ELSE 0 END) as net_income,
                     MAX(CASE WHEN account_code = 'TOTAL_ASSETS' THEN amount ELSE 0 END) as assets,
+                    -- Liabilities = Assets - Equity
+                    (MAX(CASE WHEN account_code = 'TOTAL_ASSETS' THEN amount ELSE 0 END) - MAX(CASE WHEN account_code = 'TOTAL_EQUITY' THEN amount ELSE 0 END)) as liabilities,
                     MAX(CASE WHEN account_code = 'TOTAL_EQUITY' THEN amount ELSE 0 END) as equity,
                     NOW()
                 FROM fs_fact 

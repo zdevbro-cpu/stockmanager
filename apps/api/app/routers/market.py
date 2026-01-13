@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from datetime import datetime
+from sqlalchemy import text
 import sys
 import os
 
@@ -8,6 +10,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../services")) # For sc
 
 from ingest.kis_client import KisClient
 from app.services import scrapers
+import FinanceDataReader as fdr
+from ..db import get_db
+from sqlalchemy.orm import Session
 
 router = APIRouter(tags=["Market"])
 
@@ -35,6 +40,32 @@ def get_industry_rankings():
 def get_all_industries():
     return scrapers.get_naver_industries()
 
+@router.get("/industries/members")
+def get_industry_members(names: str):
+    name_list = [v.strip() for v in names.split(",") if v.strip()]
+    if not name_list:
+        return {"items": []}
+    tickers: set[str] = set()
+    for name in name_list:
+        link = scrapers.get_industry_link_by_name(name)
+        if not link:
+            continue
+        tickers.update(scrapers.get_naver_industry_members(link))
+    return {"items": sorted(tickers)}
+
+@router.get("/themes/members")
+def get_theme_members(names: str):
+    name_list = [v.strip() for v in names.split(",") if v.strip()]
+    if not name_list:
+        return {"items": []}
+    tickers: set[str] = set()
+    for name in name_list:
+        link = scrapers.get_theme_link_by_name(name)
+        if not link:
+            continue
+        tickers.update(scrapers.get_naver_theme_members(link))
+    return {"items": sorted(tickers)}
+
 @router.get("/indices")
 def get_indices():
     # KOSPI (0001), KOSDAQ (1001), KOSPI200 (2001)
@@ -46,23 +77,44 @@ def get_indices():
     ]
     
     for t in targets:
+        fdr_map = {
+            "0001": "KS11",
+            "1001": "KQ11",
+            "2001": "KS200",
+        }
+        fdr_code = fdr_map.get(t["code"])
+        if fdr_code:
+            try:
+                df = fdr.DataReader(fdr_code)
+                latest = df.iloc[-1]
+                price = float(latest["Close"])
+                prev = float(df.iloc[-2]["Close"]) if len(df) > 1 else price
+                change = price - prev
+                rate = (change / prev * 100) if prev else 0.0
+                results.append({
+                    "name": t["name"],
+                    "value": format(price, ",.2f"),
+                    "change": f"{change:+.2f}",
+                    "changePercent": f"{rate:+.2f}%",
+                    "up": change > 0
+                })
+                continue
+            except Exception:
+                pass
+
         data = kis.get_market_index(t["code"])
         if data:
-            # Handle different key formats (Snapshot vs History)
             try:
-                # Try Snapshot keys first (bstp_nmix_...)
                 if 'bstp_nmix_prpr' in data:
                     price = float(data['bstp_nmix_prpr'])
                     change = float(data['bstp_nmix_prdy_vrss'])
                     rate = float(data['bstp_nmix_prdy_ctrt'])
-                # Fallback to History keys (stck_clpr...)
                 elif 'stck_clpr' in data:
                     price = float(data['stck_clpr'])
                     change = float(data['prdy_vrss'])
                     rate = float(data['prdy_ctrt'])
                 else:
                     raise KeyError("Unknown key format")
-                
                 results.append({
                     "name": t["name"],
                     "value": format(price, ","),
@@ -70,34 +122,180 @@ def get_indices():
                     "changePercent": f"{rate:+.2f}%",
                     "up": change > 0
                 })
-            except (ValueError, KeyError) as e:
-                print(f"Error parsing index data for {t['name']}: {e}")
-                results.append({
-                    "name": t["name"],
-                    "value": "-",
-                    "change": "-",
-                    "changePercent": "-",
-                    "up": False
-                 })
-        else:
-             # Fallback if API fails completely (prevent 'Data Not Found' UI)
-             # Use approximate values for display continuity until API is stable
-             fallback_map = {
-                 "0001": {"value": "2,542.30", "change": "+12.50", "rate": "+0.49%", "up": True}, # KOSPI
-                 "1001": {"value": "865.40", "change": "-3.20", "rate": "-0.37%", "up": False},   # KOSDAQ
-                 "2001": {"value": "340.15", "change": "+1.80", "rate": "+0.53%", "up": True},   # KOSPI200
-             }
-             fb = fallback_map.get(t["code"], {"value": "-", "change": "-", "rate": "-", "up": False})
-             
-             results.append({
-                "name": t["name"],
-                "value": fb["value"],
-                "change": fb["change"],
-                "changePercent": fb["rate"],
-                "up": fb["up"]
-             })
+                continue
+            except (ValueError, KeyError):
+                pass
+
+        results.append({
+            "name": t["name"],
+            "value": "-",
+            "change": "-",
+            "changePercent": "-",
+            "up": False
+        })
              
     return results
+
+
+@router.get("/indices/chart")
+def get_index_chart(
+    market: str = "KOSPI",
+    days: int = 30,
+    interval: str = "1d",
+    db: Session = Depends(get_db),
+):
+    market_map = {
+        "KOSPI": "0001",
+        "KOSDAQ": "1001",
+        "KOSPI200": "2001",
+    }
+    code = market_map.get(market.upper())
+    if not code:
+        raise HTTPException(status_code=400, detail="Unsupported market code")
+
+    from datetime import datetime, timedelta
+
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=max(days, 5))
+    start_str = start_date.strftime("%Y%m%d")
+    end_str = end_date.strftime("%Y%m%d")
+    start_str_fdr = start_date.strftime("%Y-%m-%d")
+    end_str_fdr = end_date.strftime("%Y-%m-%d")
+
+    fdr_map = {
+        "0001": "KS11",
+        "1001": "KQ11",
+        "2001": "KS200",
+    }
+    fdr_code = fdr_map.get(code)
+
+    interval_key = interval.lower()
+    if interval_key in ("1m", "1min", "minute"):
+        target_date = end_date.strftime("%Y%m%d")
+        if fdr_code:
+            try:
+                df_latest = fdr.DataReader(fdr_code)
+                if not df_latest.empty:
+                    latest_date = df_latest.index[-1].strftime("%Y%m%d")
+                    if latest_date < target_date:
+                        target_date = latest_date
+            except Exception:
+                pass
+        try:
+            daily_rows = kis.get_market_index_history(code, start_str, end_str)
+            if daily_rows:
+                last_daily = daily_rows[-1].get("stck_bsop_date")
+                if last_daily and last_daily < target_date:
+                    target_date = last_daily
+        except Exception:
+            pass
+        print(f"Index intraday request market={market} code={code} target_date={target_date}")
+        rows = kis.get_market_index_intraday(code, target_date)
+        if rows:
+            results = []
+            for row in rows:
+                date_str = row.get("stck_bsop_date") or end_date.strftime("%Y%m%d")
+                time_raw = row.get("stck_cntg_hour") or row.get("stck_hgpr_hour") or ""
+                if len(time_raw) >= 4:
+                    time_fmt = f"{time_raw[0:2]}:{time_raw[2:4]}"
+                else:
+                    time_fmt = ""
+                value_raw = (
+                    row.get("bstp_nmix_prpr")
+                    or row.get("stck_clpr")
+                    or row.get("indx_clpr")
+                    or row.get("clpr")
+                )
+                try:
+                    value = float(value_raw) if value_raw is not None else None
+                except (TypeError, ValueError):
+                    value = None
+                if not date_str or value is None:
+                    continue
+                label = f"{date_str} {time_fmt}".strip()
+                results.append({"date": label, "value": value})
+            if results:
+                return results
+
+    if fdr_code:
+        try:
+            df = fdr.DataReader(fdr_code, start_str_fdr, end_str_fdr)
+            if df.empty:
+                df = fdr.DataReader(fdr_code)
+            if not df.empty:
+                df = df.tail(days)
+                rows = [
+                    {"date": idx.strftime("%Y%m%d"), "value": float(row["Close"])}
+                    for idx, row in df.iterrows()
+                ]
+                return _normalize_chart_rows(rows, days)
+        except Exception as exc:
+            print(f"FDR Index Chart Error for {fdr_code}: {exc}")
+
+    raw_rows = kis.get_market_index_history(code, start_str, end_str)
+    results = []
+    for row in raw_rows:
+        date_str = row.get("stck_bsop_date") or row.get("date") or ""
+        value_raw = (
+            row.get("bstp_nmix_prpr")
+            or row.get("stck_clpr")
+            or row.get("indx_clpr")
+            or row.get("clpr")
+        )
+        try:
+            value = float(value_raw) if value_raw is not None else None
+        except (TypeError, ValueError):
+            value = None
+        if not date_str or value is None:
+            continue
+        results.append({
+            "date": date_str,
+            "value": value,
+        })
+
+    if results:
+        return _normalize_chart_rows(results, days)
+
+    # Fallback to stored data if KIS is unavailable.
+    rows = db.execute(
+        text("""
+            SELECT trade_date, close
+            FROM market_index_daily
+            WHERE index_code = :index_code
+            ORDER BY trade_date DESC
+            LIMIT :limit
+        """),
+        {"index_code": code, "limit": days},
+    ).fetchall()
+
+    if rows:
+        data = [
+            {"date": r.trade_date.strftime("%Y%m%d"), "value": float(r.close)}
+            for r in reversed(rows)
+            if r.trade_date and r.close is not None
+        ]
+        return _normalize_chart_rows(data, days)
+
+    return []
+
+def _normalize_chart_rows(rows: list[dict], days: int) -> list[dict]:
+    if not rows:
+        return []
+    today = datetime.now().strftime("%Y%m%d")
+    filtered = [
+        row for row in rows
+        if row.get("date") and row.get("value") is not None and row["date"] <= today
+    ]
+    if not filtered:
+        return []
+    filtered.sort(key=lambda row: row["date"])
+    if days <= 1:
+        today_rows = [row for row in filtered if row["date"] == today]
+        if today_rows:
+            return today_rows
+        latest_date = filtered[-1]["date"]
+        return [row for row in filtered if row["date"] == latest_date]
+    return filtered[-days:]
 
 @router.get("/popular-searches")
 def get_popular_searches():

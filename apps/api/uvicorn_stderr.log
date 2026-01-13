@@ -1,0 +1,33 @@
+=c:\\ProjectCode\\stockmanager\\apps\\api : '=c:\\ProjectCode\\stockmanager\\apps\\api' 용어가 cmdlet, 함수, 스크립트 
+파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른
+지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:1
++ ='c:\\ProjectCode\\stockmanager\\apps\\api'; ='postgresql+psycopg://p ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (=c:\\ProjectCod...ager\\apps\\api:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+=postgresql+psycopg://postgres:Kevin0371_@localhost:5432/stockmanager : '=postgresql+psycopg://postgres:Kevin0371_@loca
+lhost:5432/stockmanager' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이
+름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:46
++ ... apps\\api'; ='postgresql+psycopg://postgres:Kevin0371_@localhost:5432 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (=postgresql+psy...32/stockmanager:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+INFO:     Will watch for changes in these directories: ['C:\\ProjectCode\\stockmanager\\apps\\api']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [11552] using WatchFiles
+C:\ProjectCode\stockmanager\apps\api\app\services\report_service.py:4: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [25064]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

@@ -4,7 +4,7 @@
 -- 1. Financial Fact Table (Standardized DART Data)
 CREATE TABLE IF NOT EXISTS fs_fact (
     id SERIAL PRIMARY KEY,
-    company_id INTEGER NOT NULL REFERENCES company(id), -- Assuming company table exists
+    company_id INTEGER NOT NULL REFERENCES company(company_id), -- Corrected FK
     period_type VARCHAR(10) NOT NULL, -- 'ANNUAL', 'QUARTER'
     fiscal_year INTEGER NOT NULL,
     fiscal_quarter INTEGER, -- 1, 2, 3, 4 (Nullable for Annual)

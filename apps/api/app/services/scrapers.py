@@ -6,6 +6,9 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
 
+_INDUSTRY_LINK_CACHE: dict[str, str] = {}
+_THEME_LINK_CACHE: dict[str, str] = {}
+
 def fetch_leading_stock(sub_url_suffix):
     """
     Fetch the leading stock (highest change rate) from the theme detail page.
@@ -56,9 +59,13 @@ def fetch_theme_page(page):
             name_link = cols[0].select_one("a")
             if not name_link: continue
             
+            name = name_link.get_text(strip=True)
+            link = name_link.get("href") or ""
+            if name and link:
+                _THEME_LINK_CACHE[name] = link
             themes.append({
                 "name": name_link.get_text(strip=True),
-                "link": name_link['href'],
+                "link": link,
                 "change": cols[1].get_text(strip=True),
                 "avg3d": cols[2].get_text(strip=True)
             })
@@ -143,6 +150,9 @@ def get_naver_industries():
                 
             name = link.get_text(strip=True)
             change = cols[1].get_text(strip=True)
+            href = link.get("href") or ""
+            if name and href:
+                _INDUSTRY_LINK_CACHE[name] = href
             
             # Scrape detailed counts if possible?
             # For now return 0s to prevent broken UI
@@ -150,6 +160,7 @@ def get_naver_industries():
             industries.append({
                 "rank": rank,
                 "name": name,
+                "link": href,
                 "change": change,
                 "up": 0, "flat": 0, "down": 0
             })
@@ -160,3 +171,77 @@ def get_naver_industries():
     except Exception as e:
         print(f"Error scraping industries: {str(e)}")
         return []
+
+def get_naver_industry_members(industry_link: str):
+    """
+    Scrape member tickers from a Naver industry detail page.
+    """
+    if not industry_link:
+        return []
+
+    url = industry_link
+    if industry_link.startswith("/"):
+        url = f"https://finance.naver.com{industry_link}"
+
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=10)
+        resp.encoding = 'euc-kr'
+        soup = BeautifulSoup(resp.text, "html.parser")
+        table = soup.select_one("table.type_5")
+        if not table:
+            return []
+
+        tickers = []
+        for a in table.select("a[href*='code=']"):
+            href = a.get("href") or ""
+            if "code=" not in href:
+                continue
+            code = href.split("code=")[-1].split("&")[0]
+            if code and code.isdigit() and len(code) == 6:
+                tickers.append(code)
+
+        return sorted(set(tickers))
+    except Exception:
+        return []
+
+def get_industry_link_by_name(name: str) -> str | None:
+    if not _INDUSTRY_LINK_CACHE:
+        get_naver_industries()
+    return _INDUSTRY_LINK_CACHE.get(name)
+
+def get_naver_theme_members(theme_link: str):
+    """
+    Scrape member tickers from a Naver theme detail page.
+    """
+    if not theme_link:
+        return []
+
+    url = theme_link
+    if theme_link.startswith("/"):
+        url = f"https://finance.naver.com{theme_link}"
+
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=10)
+        resp.encoding = 'euc-kr'
+        soup = BeautifulSoup(resp.text, "html.parser")
+        table = soup.select_one("table.type_5")
+        if not table:
+            return []
+
+        tickers = []
+        for a in table.select("a[href*='code=']"):
+            href = a.get("href") or ""
+            if "code=" not in href:
+                continue
+            code = href.split("code=")[-1].split("&")[0]
+            if code and code.isdigit() and len(code) == 6:
+                tickers.append(code)
+
+        return sorted(set(tickers))
+    except Exception:
+        return []
+
+def get_theme_link_by_name(name: str) -> str | None:
+    if not _THEME_LINK_CACHE:
+        get_naver_themes()
+    return _THEME_LINK_CACHE.get(name)

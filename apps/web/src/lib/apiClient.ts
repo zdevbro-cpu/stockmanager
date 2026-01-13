@@ -12,10 +12,13 @@ export interface ApiResponse<T> {
 // But for React Query 'queryFn', we might just pass the URL.
 
 export const createApiClient = (baseURL: string) => {
+    const token = localStorage.getItem('stockmanager_auth_token') || 'local-dev';
     return axios.create({
         baseURL,
+        timeout: 10000,
         headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
         },
     });
 };

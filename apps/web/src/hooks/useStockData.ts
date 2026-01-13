@@ -19,12 +19,12 @@ export const useTopIndices = () => {
     return useQuery({
         queryKey: ['indices'],
         queryFn: async () => {
-            if (isDemoMode) return TOP_INDICES;
             const client = createApiClient(apiBaseUrl);
             const { data } = await client.get('/indices');
             return data;
         },
         staleTime: 60000,
+        refetchInterval: 900000,
     });
 };
 
@@ -33,7 +33,6 @@ export const useInvestorTrends = () => {
     return useQuery({
         queryKey: ['investorTrends'],
         queryFn: async () => {
-            if (isDemoMode) return INVESTOR_TRENDS;
             const client = createApiClient(apiBaseUrl);
             const { data } = await client.get('/investor-trends'); // Endpoint assumed
             return data;
@@ -46,7 +45,6 @@ export const usePopularSearches = () => {
     return useQuery({
         queryKey: ['popularSearches'],
         queryFn: async () => {
-            if (isDemoMode) return POPULAR_SEARCHES;
             const client = createApiClient(apiBaseUrl);
             const { data } = await client.get('/popular-searches');
             return data;
@@ -59,7 +57,6 @@ export const useAllPopularSearches = () => {
     return useQuery({
         queryKey: ['allPopularSearches'],
         queryFn: async () => {
-            if (isDemoMode) return POPULAR_SEARCHES; // Mock fallback
             const client = createApiClient(apiBaseUrl);
             const { data } = await client.get('/popular-searches/all');
             return data;
@@ -100,7 +97,6 @@ export const useAllThemes = () => {
     return useQuery({
         queryKey: ['allThemes'],
         queryFn: async () => {
-            if (isDemoMode) return THEME_RANKINGS; // Fallback to mock if needed, or implement mockAllThemes
             const client = createApiClient(apiBaseUrl);
             const { data } = await client.get('/themes/all');
             return data;
@@ -113,11 +109,59 @@ export const useAllIndustries = () => {
     return useQuery({
         queryKey: ['allIndustries'],
         queryFn: async () => {
-            if (isDemoMode) return INDUSTRY_RANKINGS;
             const client = createApiClient(apiBaseUrl);
             const { data } = await client.get('/industries/all');
             return data;
         },
+    });
+};
+
+export const useIndustryNodes = () => {
+    const { apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['industryNodes'],
+        queryFn: async () => {
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/classifications/nodes', {
+                params: {
+                    taxonomy_id: 'KIS_INDUSTRY',
+                },
+            });
+            return data?.items ?? [];
+        },
+        staleTime: 60000,
+    });
+};
+
+export const useIndexChart = (market: string) => {
+    const { apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['indexChart', market],
+        queryFn: async () => {
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/indices/chart', {
+                params: {
+                    market,
+                    days: 30,
+                    interval: '1d',
+                },
+            });
+            return data;
+        },
+        staleTime: 60000,
+    });
+};
+
+export const useUniverse = (params: Record<string, unknown>) => {
+    const { apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['universe', params],
+        queryFn: async () => {
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/universe', { params });
+            return data;
+        },
+        staleTime: 60000,
     });
 };
 

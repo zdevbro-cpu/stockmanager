@@ -12,11 +12,17 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     // Initialize from localStorage or defaults
     const [apiBaseUrl, setApiBaseUrlState] = useState(() => {
-        return localStorage.getItem('stockmanager_api_url') || 'http://localhost:8000';
+        const stored = localStorage.getItem('stockmanager_api_url');
+        if (!stored || stored === 'http://localhost:8000') {
+            const next = 'http://localhost:8010';
+            localStorage.setItem('stockmanager_api_url', next);
+            return next;
+        }
+        return stored;
     });
     const [isDemoMode, setDemoModeState] = useState(() => {
         const stored = localStorage.getItem('stockmanager_demo_mode');
-        return stored === null ? true : stored === 'true'; // Default to True
+        return stored === null ? false : stored === 'true';
     });
 
     const setApiBaseUrl = (url: string) => {
