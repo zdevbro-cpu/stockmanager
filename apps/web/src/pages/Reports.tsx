@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import clsx from 'clsx';
-import { useSettings } from '../contexts/SettingsContext';
-import { createApiClient } from '../lib/apiClient';
+import { useQuery } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useSettings } from '../contexts/SettingsContext';
+import { createApiClient } from '../lib/apiClient';
 import DocumentManager from '../features/reports/DocumentManager';
 
 type Tab = 'library' | 'builder' | 'preview';
@@ -16,7 +17,6 @@ interface ReportMeta {
     created_at: string;
 }
 
-import { useQuery } from '@tanstack/react-query';
 import {
     ComposedChart,
     Line,
@@ -33,24 +33,16 @@ function ReportChartLoader({ reportId }: { reportId: number }) {
     const { apiBaseUrl } = useSettings();
     const client = createApiClient(apiBaseUrl);
 
-    // 1. Get Company ID from Report ID
     const { data: reportMeta } = useQuery({
         queryKey: ['report_meta', reportId],
         queryFn: async () => {
             const resp = await client.get(`/reports/${reportId}`);
-            // The endpoint returns { id, status, company_id, content } if modified slightly or we infer from list
-            // Wait, the current GET /reports/{id} only returns content and status.
-            // We need company_id. Let's patch API or find it from list.
-            // Actually, the GET /reports/{id} DOES return company_id in the DB query, but maybe not in response model.
-            // Let's check api result. The router code says: `SELECT company_id... return {id, status, content}`.
-            // I should add company_id to the response of GET /reports/{id}.
             return resp.data;
-        }
+        },
     });
 
     const companyId = reportMeta?.company_id;
 
-    // 2. Fetch Chart Data
     const { data: chartData } = useQuery({
         queryKey: ['financials_chart', companyId, 'FIN_IS_ANNUAL_3Y'],
         queryFn: async () => {
@@ -58,7 +50,7 @@ function ReportChartLoader({ reportId }: { reportId: number }) {
             const resp = await client.get(`/financials/${companyId}/chart/FIN_IS_ANNUAL_3Y`);
             return resp.data;
         },
-        enabled: !!companyId
+        enabled: !!companyId,
     });
 
     if (!companyId) return <div className="text-center text-gray-400 text-xs">Loading context...</div>;
@@ -69,19 +61,28 @@ function ReportChartLoader({ reportId }: { reportId: number }) {
             <ComposedChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
                 <XAxis dataKey="name" stroke="#666" tick={{ fontSize: 10 }} />
-                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" tick={{ fontSize: 10 }} tickFormatter={(val) => `${(val / 100000000).toLocaleString()}`} label={{ value: '금액(억원)', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }} />
+                <YAxis
+                    yAxisId="left"
+                    orientation="left"
+                    stroke="#8884d8"
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(val) => `${(val / 100000000).toLocaleString()}`}
+                    label={{ value: 'Amount (100M KRW)', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }}
+                />
                 <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" tick={{ fontSize: 10 }} tickFormatter={(val) => `${val}%`} />
                 <Tooltip
                     contentStyle={{ backgroundColor: '#fff', borderColor: '#ddd', fontSize: '10px', color: '#000' }}
                     formatter={(value: any, name: string) => {
-                        if (name.includes('이익률') || name.includes('ROE')) return [`${value}%`, name];
-                        return [`${(value / 100000000).toLocaleString()} 억원`, name];
+                        if (name.toLowerCase().includes('margin') || name.toUpperCase().includes('ROE')) {
+                            return [`${value}%`, name];
+                        }
+                        return [`${(value / 100000000).toLocaleString()} KRW 100M`, name];
                     }}
                 />
                 <Legend iconSize={10} wrapperStyle={{ fontSize: '10px' }} />
-                <Bar yAxisId="left" dataKey="매출액" fill="#bfdbfe" name="매출액" barSize={40} radius={[4, 4, 0, 0]} />
-                <Line yAxisId="left" type="monotone" dataKey="영업이익" stroke="#2563eb" strokeWidth={2} name="영업이익" dot={{ r: 3 }} />
-                <Line yAxisId="left" type="monotone" dataKey="순이익" stroke="#7c3aed" strokeWidth={2} name="순이익" dot={{ r: 3 }} />
+                <Bar yAxisId="left" dataKey="revenue" fill="#bfdbfe" name="Revenue" barSize={40} radius={[4, 4, 0, 0]} />
+                <Line yAxisId="left" type="monotone" dataKey="op_income" stroke="#2563eb" strokeWidth={2} name="Operating Income" dot={{ r: 3 }} />
+                <Line yAxisId="left" type="monotone" dataKey="net_income" stroke="#7c3aed" strokeWidth={2} name="Net Income" dot={{ r: 3 }} />
             </ComposedChart>
         </ResponsiveContainer>
     );
@@ -155,11 +156,11 @@ export default function Reports() {
 
     const handleCreateReport = async () => {
         if (!targetCompanyId) {
-            alert("기업을 먼저 선택해주세요.");
+            alert('Delete failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
             return;
         }
         setIsGenerating(true);
-        setGenerationStatus('리포트 생성 요청을 보내는 중...');
+        setGenerationStatus('由ы룷???앹꽦 ?붿껌??蹂대궡??以?..');
         try {
             const client = createApiClient(apiBaseUrl);
             const startResp = await client.post('/reports', {
@@ -170,7 +171,7 @@ export default function Reports() {
             });
 
             const newReportId = startResp.data.report_id;
-            setGenerationStatus('AI 분석 및 DART 데이터 수집 중... (약 20~40초 소요)');
+            setGenerationStatus('AI 遺꾩꽍 諛?DART ?곗씠???섏쭛 以?.. (??20~40珥??뚯슂)');
 
             // Polling for status
             let isDone = false;
@@ -185,27 +186,27 @@ export default function Reports() {
                     const statusResp = await client.get(`/reports/${newReportId}`);
                     if (statusResp.data.status === 'DONE') {
                         isDone = true;
-                        setGenerationStatus('분석 완료! 리포트를 불러오는 중...');
+                        setGenerationStatus('遺꾩꽍 ?꾨즺! 由ы룷?몃? 遺덈윭?ㅻ뒗 以?..');
                         await fetchReportDetail(newReportId);
                         fetchReports();
                     } else {
                         // Update status every 2 seconds so user knows it's alive
-                        setGenerationStatus(`심층 분석 진행 중... (${attempts * 2}초 경과)`);
+                        setGenerationStatus(`?ъ링 遺꾩꽍 吏꾪뻾 以?.. (${attempts * 2}珥?寃쎄낵)`);
                     }
                 } catch (err) {
                     console.error("Polling error", err);
                     // On error, still update the time to show we're retrying
-                    setGenerationStatus(`재시도 중... (${attempts * 2}초 경과)`);
+                    setGenerationStatus(`?ъ떆??以?.. (${attempts * 2}珥?寃쎄낵)`);
                 }
             }
 
             if (!isDone) {
-                alert("리포트 생성 시간이 너무 오래 걸립니다. 라이브러리에서 나중에 확인해주세요.");
+                alert("由ы룷???앹꽦 ?쒓컙???덈Т ?ㅻ옒 嫄몃┰?덈떎. ?쇱씠釉뚮윭由ъ뿉???섏쨷???뺤씤?댁＜?몄슂.");
                 setActiveTab('library');
                 fetchReports();
             }
         } catch (error) {
-            alert("리포트 생성 요청 실패");
+            alert("由ы룷???앹꽦 ?붿껌 ?ㅽ뙣");
         } finally {
             setIsGenerating(false);
             setGenerationStatus('');
@@ -331,7 +332,7 @@ export default function Reports() {
     };
 
     const handleDeleteReport = async (id: number) => {
-        if (!confirm("이 리포트를 삭제하시겠습니까?")) return;
+        if (!confirm("??由ы룷?몃? ??젣?섏떆寃좎뒿?덇퉴?")) return;
 
         // Optimistic UI update: Remove from list immediately
         const previousReports = [...reports];
@@ -353,7 +354,7 @@ export default function Reports() {
         } catch (error) {
             // Rollback if failed
             setReports(previousReports);
-            alert("삭제 실패: " + (error instanceof Error ? error.message : "알 수 없는 오류"));
+            alert("??젣 ?ㅽ뙣: " + (error instanceof Error ? error.message : "?????녿뒗 ?ㅻ쪟"));
         }
     };
 
@@ -362,14 +363,14 @@ export default function Reports() {
     }, [apiBaseUrl]);
 
     const TABS: { id: Tab; label: string; icon: string }[] = [
-        { id: 'builder', label: '작성기 (Builder)', icon: 'edit_document' },
-        { id: 'preview', label: '미리보기 (Preview)', icon: 'visibility' },
-        { id: 'library', label: '라이브러리 (Library)', icon: 'library_books' },
+        { id: 'builder', label: 'Builder', icon: 'edit_document' },
+        { id: 'preview', label: 'Preview', icon: 'visibility' },
+        { id: 'library', label: 'Library', icon: 'library_books' },
     ];
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto h-[calc(100vh-100px)]">
-            <h1 className="text-2xl font-bold text-white no-print">리포트 (Reports)</h1>
+            <h1 className="text-2xl font-bold text-white no-print">Reports</h1>
 
             {/* Tabs */}
             <div className="flex border-b border-border-dark no-print">
@@ -401,15 +402,15 @@ export default function Reports() {
                             <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                             <div className="absolute inset-4 border-4 border-cyan-400/20 rounded-full animate-pulse"></div>
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">심층 투자 리포트 생성 중</h3>
+                        <h3 className="text-xl font-bold text-white mb-2">Generating report</h3>
                         <p className="text-text-subtle mb-4 max-w-md">
-                            선택하신 기업의 최근 3년 재무 제표, DART 공시 원문, 최신 뉴스 10건을 수집하여 AI가 심층 분석 보고서를 작성하고 있습니다.
+                            Collecting financials, DART filings, and recent news for the report.
                         </p>
                         <div className="bg-primary/10 border border-primary/30 px-6 py-3 rounded-full text-primary font-bold animate-bounce shadow-lg shadow-primary/20">
                             {generationStatus}
                         </div>
                         <p className="mt-8 text-[10px] text-gray-500 italic">
-                            * 대규모 언어 모델을 통한 심층 분석 과정으로 약 30초 내외의 시간이 소요됩니다.
+                            * Generation time depends on data availability.
                         </p>
                     </div>
                 )}
@@ -418,22 +419,22 @@ export default function Reports() {
                 {activeTab === 'library' && (
                     <div className="flex flex-col gap-4 h-full overflow-y-auto no-print">
                         <div className="flex justify-between items-center mb-2">
-                            <h2 className="text-lg font-bold text-white">생성된 리포트 목록</h2>
+                            <h2 className="text-lg font-bold text-white">Report Library</h2>
                             <button
                                 onClick={() => setActiveTab('builder')}
                                 className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
                             >
                                 <span className="material-symbols-outlined text-[18px]">add</span>
-                                새 리포트 작성
+                                Create report
                             </button>
                         </div>
                         <div className="border border-border-dark rounded-lg overflow-hidden">
                             <table className="w-full text-sm">
                                 <thead className="bg-[#151e1d] text-text-subtle">
                                     <tr>
-                                        <th className="px-4 py-3 text-left">제목/기업</th>
-                                        <th className="px-4 py-3 text-left">생성일</th>
-                                        <th className="px-4 py-3 text-left">상태</th>
+                                        <th className="px-4 py-3 text-left">Company</th>
+                                        <th className="px-4 py-3 text-left">Created At</th>
+                                        <th className="px-4 py-3 text-left">Status</th>
                                         <th className="px-4 py-3 text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -442,7 +443,7 @@ export default function Reports() {
                                         <tr key={r.id} className="hover:bg-white/5 text-gray-300">
                                             <td className="px-4 py-3">
                                                 <div className="flex flex-col">
-                                                    <span className="text-white font-bold">{r.company_name} 투자 분석</span>
+                                                    <span className="text-white font-bold">{r.company_name}</span>
                                                     <span className="text-xs text-text-subtle">{r.template}</span>
                                                 </div>
                                             </td>
@@ -466,29 +467,16 @@ export default function Reports() {
                                                             link.click();
                                                         }}
                                                         className="text-blue-400 hover:bg-blue-400/10 p-2 rounded-lg transition-colors flex items-center justify-center"
-                                                        title="다운로드"
+                                                        title="?ㅼ슫濡쒕뱶"
                                                     >
                                                         <span className="material-symbols-outlined text-[20px]">download</span>
-                                                    </button>
-
-                                                    {/* Print */}
-                                                    <button
-                                                        onClick={async () => {
-                                                            await fetchReportDetail(r.id);
-                                                            setActiveTab('preview');
-                                                            setTimeout(() => window.print(), 800);
-                                                        }}
-                                                        className="text-purple-400 hover:bg-purple-400/10 p-2 rounded-lg transition-colors flex items-center justify-center"
-                                                        title="인쇄"
-                                                    >
-                                                        <span className="material-symbols-outlined text-[20px]">print</span>
                                                     </button>
 
                                                     {/* View */}
                                                     <button
                                                         onClick={() => fetchReportDetail(r.id)}
                                                         className="text-cyan-300 hover:bg-cyan-300/10 p-2 rounded-lg transition-colors flex items-center justify-center"
-                                                        title="리포트 보기"
+                                                        title="由ы룷??蹂닿린"
                                                     >
                                                         <span className="material-symbols-outlined text-[20px]">visibility</span>
                                                     </button>
@@ -497,7 +485,7 @@ export default function Reports() {
                                                     <button
                                                         onClick={() => handleDeleteReport(r.id)}
                                                         className="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center"
-                                                        title="리포트 삭제"
+                                                        title="由ы룷????젣"
                                                     >
                                                         <span className="material-symbols-outlined text-[20px]">delete</span>
                                                     </button>
@@ -508,7 +496,7 @@ export default function Reports() {
                                     {reports.length === 0 && (
                                         <tr>
                                             <td colSpan={4} className="px-4 py-8 text-center text-text-subtle">
-                                                생성된 리포트가 없습니다.
+                                                ?앹꽦??由ы룷?멸? ?놁뒿?덈떎.
                                             </td>
                                         </tr>
                                     )}
@@ -521,15 +509,15 @@ export default function Reports() {
                 {/* Builder Tab */}
                 {activeTab === 'builder' && (
                     <div className="flex flex-col h-full overflow-y-auto max-w-2xl mx-auto w-full py-8 no-print">
-                        <h2 className="text-xl font-bold text-white mb-6">AI 리포트 생성기</h2>
+                        <h2 className="text-xl font-bold text-white mb-6">AI Report Builder</h2>
 
                         <div className="space-y-6">
                             <div className="flex flex-col gap-2">
-                                <label className="text-sm font-bold text-text-subtle">기업 검색 (이름 또는 종목코드)</label>
+                                <label className="text-sm font-bold text-text-subtle">Company Search</label>
                                 <div className="relative">
                                     <input
                                         type="text"
-                                        placeholder="예: 금호석유, 005930"
+                                        placeholder="Search company name or ticker"
                                         value={searchTerm}
                                         onChange={(e) => searchCompanies(e.target.value)}
                                         className="w-full bg-background-dark border border-border-dark rounded-lg px-4 py-3 text-white outline-none focus:border-primary"
@@ -556,7 +544,7 @@ export default function Reports() {
                                     )}
                                 </div>
                                 {targetCompanyId && (
-                                    <p className="text-xs text-primary font-bold mt-1">✓ 선택됨: {selectedCompanyName} (ID: {targetCompanyId})</p>
+                                    <p className="text-xs text-primary font-bold mt-1">Selected: {selectedCompanyName} (ID: {targetCompanyId})</p>
                                 )}
                                 <div className="mt-4">
                                     <DocumentManager companyId={targetCompanyId} />
@@ -564,18 +552,18 @@ export default function Reports() {
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <label className="text-sm font-bold text-text-subtle">리포트 템플릿</label>
+                                <label className="text-sm font-bold text-text-subtle">Template</label>
                                 <select
                                     value={template}
                                     onChange={(e) => setTemplate(e.target.value)}
                                     className="bg-background-dark border border-border-dark rounded-lg px-4 py-3 text-white outline-none focus:border-primary"
                                 >
-                                    <optgroup label="상장사 전용 (DART 연동)">
-                                        <option value="investment_memo_vc_v1">투자 결정 검토서 (VC Style)</option>
-                                        <option value="investment_memo_v1">기업 분석 미팅 메모</option>
+                                    <optgroup label="Public Companies (DART)">
+                                        <option value="investment_memo_vc_v1">VC Investment Memo</option>
+                                        <option value="investment_memo_v1">Company Memo</option>
                                     </optgroup>
-                                    <optgroup label="비상장사 전용 (DeepSearch - 연동 예정)" disabled>
-                                        <option value="startup_brief">스타트업 투자 요약</option>
+                                    <optgroup label="Private Companies" disabled>
+                                        <option value="startup_brief">Startup Brief</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -588,36 +576,25 @@ export default function Reports() {
                                 {isGenerating ? (
                                     <>
                                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                        AI 분석 중... 자산/공시 데이터 로딩 중
+                                        Generating report...
                                     </>
                                 ) : (
                                     <>
                                         <span className="material-symbols-outlined">auto_awesome</span>
-                                        분석 보고서 생성 (Generate)
+                                        Generate Report
                                     </>
                                 )}
                             </button>
-
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mt-8">
-                                <h4 className="text-blue-400 font-bold text-sm flex items-center gap-2 mb-2">
-                                    <span className="material-symbols-outlined text-[18px]">info</span>
-                                    비상장사 데이터 안내
-                                </h4>
-                                <p className="text-xs text-blue-300 leading-relaxed">
-                                    현재 상장사 리포트 기능이 우선 구현되었습니다. 비상장사 분석은 <b>DeepSearch</b> 및 <b>혁신의숲 API</b> 연동을 통해 곧 지원될 예정입니다.
-                                </p>
-                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* Preview Tab */}
                 {activeTab === 'preview' && (
                     <div className="h-full flex flex-col gap-4">
                         <div className="flex justify-between items-center border-b border-border-dark pb-4 no-print">
                             <h2 className="text-lg font-bold text-white flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary">description</span>
-                                리포트 미리보기
+                                Report Preview
                             </h2>
                             <button
                                 onClick={handleDownloadPdf}
@@ -625,7 +602,7 @@ export default function Reports() {
                                 className="flex items-center gap-2 text-sm text-cyan-300 hover:text-cyan-100 transition-colors bg-cyan-400/10 px-3 py-1.5 rounded-lg disabled:opacity-50"
                             >
                                 <span className="material-symbols-outlined text-[20px]">print</span>
-                                PDF 인쇄/저장 (Clean Print)
+                                Print / PDF (Clean Print)
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto bg-background-dark/50 rounded-lg p-0 border border-border-dark shadow-inner print:overflow-visible print:bg-white print:border-none print:shadow-none">
@@ -647,7 +624,7 @@ export default function Reports() {
                                                 {/* Render Chart between parts if not the last part */}
                                                 {idx < reportContent.split(':::chart-financial-annual:::').length - 1 && selectedReportId && (
                                                     <div className="my-8 h-[300px] w-full border border-gray-200 rounded p-4 break-inside-avoid page-break-inside-avoid">
-                                                        <h3 className="text-center mb-4 text-sm font-bold">재무실적(Financial Performance)</h3>
+                                                        <h3 className="text-center mb-4 text-sm font-bold">?щТ?ㅼ쟻(Financial Performance)</h3>
                                                         <ReportChartLoader reportId={selectedReportId} />
                                                     </div>
                                                 )}
@@ -750,3 +727,4 @@ export default function Reports() {
         </div>
     );
 }
+

@@ -253,3 +253,37 @@ class KisClient:
             return resp.json().get("output")
         print(f"KIS Price Error for {stock_code}: {resp.text}")
         return None
+
+    def get_stock_daily_history(self, stock_code: str, start_date: str, end_date: str):
+        """
+        Fetch daily price history (FHKST03010100).
+        Dates must be YYYYMMDD.
+        """
+        if not self._get_token():
+            return []
+
+        url = f"{self.base_url}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
+        headers = {
+            "content-type": "application/json; charset=utf-8",
+            "authorization": f"Bearer {self.access_token}",
+            "appkey": self.app_key,
+            "appsecret": self.app_secret,
+            "tr_id": "FHKST03010100",
+            "custtype": "P",
+        }
+        params = {
+            "FID_COND_MRKT_DIV_CODE": "J",
+            "FID_INPUT_ISCD": stock_code,
+            "FID_INPUT_DATE_1": start_date,
+            "FID_INPUT_DATE_2": end_date,
+            "FID_PERIOD_DIV_CODE": "D",
+            "FID_ORG_ADJ_PRC": "0",
+        }
+
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            rows = data.get("output2") or []
+            return list(reversed(rows))
+        print(f"KIS Daily History Error for {stock_code}: {resp.text[:200]}")
+        return []

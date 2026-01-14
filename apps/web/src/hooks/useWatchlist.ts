@@ -7,10 +7,25 @@ export interface WatchlistItem {
     addedAt: string;
 }
 
+const sanitizeText = (value: string) => {
+    if (!value) return value;
+    return value.includes('\uFFFD') ? '' : value;
+};
+
 export function useWatchlist() {
     const [watchlist, setWatchlist] = useState<WatchlistItem[]>(() => {
         const stored = localStorage.getItem('stockmanager_watchlist');
-        return stored ? JSON.parse(stored) : [];
+        if (!stored) return [];
+        try {
+            const parsed = JSON.parse(stored) as WatchlistItem[];
+            return parsed.map((item) => ({
+                ...item,
+                name: sanitizeText(item.name),
+                note: sanitizeText(item.note),
+            }));
+        } catch (error) {
+            return [];
+        }
     });
 
     useEffect(() => {

@@ -1,15 +1,14 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-// cleaned up imports
 import clsx from 'clsx';
 
 const NAV_ITEMS = [
-    { path: '/', label: '홈', icon: 'home' },
-    { path: '/screener', label: '발굴(Screener)', icon: 'filter_alt' },
-    { path: '/recommendations', label: '추천/근거', icon: 'recommend' },
-    { path: '/signals', label: '매매신호', icon: 'sensors' },
-    { path: '/watchlist', label: '관심종목', icon: 'visibility' },
-    { path: '/reports', label: '리포트', icon: 'description' },
-    { path: '/settings', label: '설정', icon: 'settings' },
+    { path: '/', label: 'Market Information', icon: 'home' },
+    { path: '/screener', label: 'Screener', icon: 'filter_alt' },
+    { path: '/recommendations', label: 'Recommendation', icon: 'recommend' },
+    { path: '/watchlist', label: 'Watchlist', icon: 'visibility' },
+    { path: '/signals', label: 'Signals', icon: 'sensors' },
+    { path: '/reports', label: 'Reports', icon: 'description' },
+    { path: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
 export default function Layout() {
@@ -96,7 +95,7 @@ export default function Layout() {
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#151e1d]/90 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
                 <div className="flex items-center justify-around h-16 px-2">
                     {(
-                        [NAV_ITEMS[0], NAV_ITEMS[1], { ...NAV_ITEMS[2], isFab: true }, NAV_ITEMS[4], NAV_ITEMS[3]] as Array<typeof NAV_ITEMS[0] & { isFab?: boolean }>
+                        [NAV_ITEMS[0], NAV_ITEMS[1], { ...NAV_ITEMS[2], isFab: true }, NAV_ITEMS[3], NAV_ITEMS[4]] as Array<typeof NAV_ITEMS[0] & { isFab?: boolean }>
                     ).map((item) => {
                         if (item.isFab) {
                             return (

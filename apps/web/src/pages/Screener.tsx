@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useAllIndustries, useAllThemes, useIndustryNodes, useUniverse } from '../hooks/useStockData';
 import { createApiClient } from '../lib/apiClient';
 import { useSettings } from '../contexts/SettingsContext';
+import { useWatchlist } from '../hooks/useWatchlist';
 
 // Mock large list for the table
 const MOCK_SCREENER_RESULTS = [
@@ -27,6 +28,7 @@ export default function Screener() {
     const { data: themeData } = useAllThemes();
     const { data: industryNodes } = useIndustryNodes();
     const { data: industryData } = useAllIndustries();
+    const { watchlist, addStock } = useWatchlist();
 
     const [priceMin, setPriceMin] = useState<string>('');
     const [industryQuery, setIndustryQuery] = useState<string>('');
@@ -38,6 +40,12 @@ export default function Screener() {
     const [hiddenThemes, setHiddenThemes] = useState<string[]>([]);
     const [pageSize, setPageSize] = useState<number>(50);
     const [pageIndex, setPageIndex] = useState<number>(1);
+
+    const watchlistTickers = useMemo(() => (
+        new Set(watchlist.map((item) => item.ticker))
+    ), [watchlist]);
+
+    const isWatchlistAdded = (ticker: string) => watchlistTickers.has(ticker);
 
     useEffect(() => {
         const stored = localStorage.getItem(FILTER_STORAGE_KEY);
@@ -562,12 +570,13 @@ export default function Screener() {
                                 <th className="px-4 py-3 font-bold border-b border-border-dark text-right">{turnoverLabel}</th>
                                 <th className="px-4 py-3 font-bold border-b border-border-dark text-center">신호</th>
                                 <th className="px-4 py-3 font-bold border-b border-border-dark text-right">점수</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border-dark/50">
                             {pagedItems.length === 0 && (
                                 <tr>
-                                    <td className="px-4 py-6 text-center text-sm text-text-subtle" colSpan={7}>
+                                    <td className="px-4 py-6 text-center text-sm text-text-subtle" colSpan={8}>
                                         조건에 맞는 결과가 없습니다.
                                     </td>
                                 </tr>
@@ -608,10 +617,27 @@ export default function Screener() {
                                             {item.target || '-'}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-right text-primary font-bold">
+                                    <td className="px-4 py-3 text-right text-yellow-200 font-bold">
                                         {item.score === '-' || item.score === null || item.score === undefined
                                             ? '-'
                                             : item.score}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <button
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                addStock(item.ticker, item.name);
+                                            }}
+                                            disabled={isWatchlistAdded(item.ticker)}
+                                            className={clsx(
+                                                "px-3 py-1 rounded-md text-xs font-bold transition-colors",
+                                                isWatchlistAdded(item.ticker)
+                                                    ? "bg-white/10 text-text-subtle cursor-not-allowed"
+                                                    : "bg-primary text-white hover:bg-primary/90"
+                                            )}
+                                        >
+                                            {isWatchlistAdded(item.ticker) ? '추가됨' : '추가'}
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

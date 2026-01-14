@@ -297,6 +297,58 @@ def _normalize_chart_rows(rows: list[dict], days: int) -> list[dict]:
         return [row for row in filtered if row["date"] == latest_date]
     return filtered[-days:]
 
+
+@router.get("/prices/quotes")
+def get_price_quotes(
+    tickers: str,
+    db: Session = Depends(get_db),
+):
+    ticker_list = [t.strip() for t in tickers.split(",") if t.strip()]
+    if not ticker_list:
+        return {"items": []}
+
+    rows = db.execute(
+        text(
+            """
+            SELECT ticker, trade_date, close
+            FROM price_daily
+            WHERE ticker = ANY(:tickers)
+            ORDER BY ticker, trade_date DESC
+            """
+        ),
+        {"tickers": ticker_list},
+    ).fetchall()
+
+    result: dict[str, dict] = {}
+    for row in rows:
+        entry = result.setdefault(row.ticker, {
+            "ticker": row.ticker,
+            "close": None,
+            "prev_close": None,
+            "trade_date": None,
+        })
+        if entry["close"] is None:
+            entry["close"] = float(row.close) if row.close is not None else None
+            entry["trade_date"] = row.trade_date.isoformat() if row.trade_date else None
+            continue
+        if entry["prev_close"] is None:
+            entry["prev_close"] = float(row.close) if row.close is not None else None
+
+    items = []
+    for entry in result.values():
+        close = entry["close"]
+        prev = entry["prev_close"]
+        change = None
+        change_percent = None
+        if close is not None and prev is not None and prev != 0:
+            change = close - prev
+            change_percent = (change / prev) * 100
+        entry["change"] = change
+        entry["change_percent"] = change_percent
+        items.append(entry)
+
+    return {"items": items}
+
 @router.get("/popular-searches")
 def get_popular_searches():
     # Use Volume Rank as proxy for popular searches

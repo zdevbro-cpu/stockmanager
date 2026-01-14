@@ -165,28 +165,98 @@ export const useUniverse = (params: Record<string, unknown>) => {
     });
 };
 
-export const useRecommendations = () => {
+export const useRecommendations = (params?: {
+    as_of_date?: string;
+    strategy_id?: string;
+    strategy_version?: string;
+}) => {
     const { isDemoMode, apiBaseUrl } = useSettings();
     return useQuery({
-        queryKey: ['recommendations'],
+        queryKey: ['recommendations', params],
         queryFn: async () => {
             if (isDemoMode) return RECOMENDATIONS;
             const client = createApiClient(apiBaseUrl);
-            const { data } = await client.get('/recommendations');
-            return data;
+            const { data } = await client.get('/recommendations', { params });
+            if (Array.isArray(data)) return data;
+            return data?.items ?? [];
         },
+        retry: false,
     });
 };
 
-export const useSignals = () => {
+export const useStrategies = () => {
+    const { apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['strategies'],
+        queryFn: async () => {
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/strategies');
+            if (Array.isArray(data)) return data;
+            return data?.items ?? [];
+        },
+        staleTime: 60000,
+        retry: false,
+    });
+};
+
+export const useRecommendationRunStatus = () => {
+    const { apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['recommendations-run-status'],
+        queryFn: async () => {
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/recommendations/run-status');
+            return data;
+        },
+        staleTime: 10000,
+        retry: false,
+    });
+};
+
+const buildSignalReason = (row: any) => {
+    if (Array.isArray(row?.risk_flags) && row.risk_flags.length > 0) {
+        if (row.risk_flags.includes('NO_PRICE_DATA')) {
+            return '데이터 부족: price_daily 데이터 없음';
+        }
+        if (row.risk_flags.includes('INSUFFICIENT_HISTORY')) {
+            return '데이터 부족: 최근 가격 이력 부족';
+        }
+        return row.risk_flags.join(', ');
+    }
+    if (Array.isArray(row?.triggers) && row.triggers.length > 0) {
+        return row.triggers.join(', ');
+    }
+    if (row?.confidence !== null && row?.confidence !== undefined) {
+        return `Confidence ${Number(row.confidence).toFixed(2)}`;
+    }
+    return '-';
+};
+
+export const useSignals = (params?: { horizon?: string; ticker?: string; tickers?: string[] }) => {
     const { isDemoMode, apiBaseUrl } = useSettings();
     return useQuery({
-        queryKey: ['signals'],
+        queryKey: ['signals', params],
         queryFn: async () => {
             if (isDemoMode) return SIGNALS;
             const client = createApiClient(apiBaseUrl);
-            const { data } = await client.get('/signals');
-            return data;
+            const requestParams = {
+                ...params,
+                tickers: params?.tickers?.join(','),
+            };
+            const { data } = await client.get('/signals', { params: requestParams });
+            const items = Array.isArray(data) ? data : data?.items ?? [];
+            return items.map((row: any) => ({
+                date: row.ts ? String(row.ts).slice(0, 10) : row.date,
+                name: row.name ?? row.ticker ?? '-',
+                ticker: row.ticker ?? '-',
+                type: row.signal ?? row.type ?? 'WAIT',
+                price: row.price ?? '-',
+                reason: row.reason ?? buildSignalReason(row),
+                horizon: row.horizon ?? params?.horizon ?? '-',
+                target_price_low: row.target_price_low ?? null,
+                target_price_high: row.target_price_high ?? null,
+                target_price_basis: row.target_price_basis ?? null,
+            }));
         },
     });
 };

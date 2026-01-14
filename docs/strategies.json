@@ -1,0 +1,86 @@
+[
+  {
+    "strategy_id": "prod_v1",
+    "strategy_version": "1.0",
+    "name": "공격형",
+    "summary": "단기 모멘텀 중심. 변동성 패널티와 유동성/가격 필터를 적용합니다.",
+    "params": {
+      "top_n_default": 5,
+      "min_price_krw": 1000,
+      "min_avg_turnover_krw_20d": 20000000000,
+      "max_weight_per_name": 0.18,
+      "max_weight_per_sector": 0.4,
+      "sector_taxonomy": "KIS_INDUSTRY"
+    }
+  },
+  {
+    "strategy_id": "momentum_short",
+    "strategy_version": "1.0",
+    "name": "스윙형",
+    "summary": "단기 모멘텀 강화 + 유동성 필터 강화. 분산 비중을 낮게 유지합니다.",
+    "params": {
+      "top_n_default": 10,
+      "min_price_krw": 1500,
+      "min_avg_turnover_krw_20d": 40000000000,
+      "max_weight_per_name": 0.12,
+      "max_weight_per_sector": 0.35,
+      "sector_taxonomy": "KIS_INDUSTRY"
+    }
+  },
+  {
+    "strategy_id": "balanced_core",
+    "strategy_version": "1.0",
+    "name": "안정형",
+    "summary": "후보군을 넓게 가져가고 분산 비중을 강화합니다.",
+    "params": {
+      "top_n_default": 20,
+      "min_price_krw": 800,
+      "min_avg_turnover_krw_20d": 15000000000,
+      "max_weight_per_name": 0.08,
+      "max_weight_per_sector": 0.3,
+      "sector_taxonomy": "KIS_INDUSTRY"
+    }
+  },
+  {
+    "strategy_id": "value_focus",
+    "strategy_version": "1.0",
+    "name": "가치형",
+    "summary": "유동성/가격 기준을 완화하여 저평가 후보를 넓게 포함합니다.",
+    "params": {
+      "top_n_default": 25,
+      "min_price_krw": 700,
+      "min_avg_turnover_krw_20d": 8000000000,
+      "max_weight_per_name": 0.07,
+      "max_weight_per_sector": 0.25,
+      "sector_taxonomy": "KIS_INDUSTRY"
+    }
+  },
+  {
+    "strategy_id": "quality_defensive",
+    "strategy_version": "1.0",
+    "name": "방어형",
+    "summary": "분산을 강화하고 비중 상한을 낮춰 리스크를 줄입니다.",
+    "params": {
+      "top_n_default": 30,
+      "min_price_krw": 1000,
+      "min_avg_turnover_krw_20d": 10000000000,
+      "max_weight_per_name": 0.06,
+      "max_weight_per_sector": 0.22,
+      "sector_taxonomy": "KIS_INDUSTRY"
+    }
+  },
+  {
+    "strategy_id": "aggressive_concentrated",
+    "strategy_version": "1.0",
+    "name": "집중형",
+    "summary": "상위 소수 종목에 집중하는 고위험 전략입니다.",
+    "params": {
+      "top_n_default": 8,
+      "min_price_krw": 3000,
+      "min_avg_turnover_krw_20d": 60000000000,
+      "max_weight_per_name": 0.22,
+      "max_weight_per_sector": 0.45,
+      "sector_taxonomy": "KIS_INDUSTRY"
+    }
+  }
+]
