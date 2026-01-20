@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RECOMENDATIONS } from '../lib/mockData';
 import clsx from 'clsx';
@@ -9,13 +9,13 @@ import { useWatchlist } from '../hooks/useWatchlist';
 
 // Mock large list for the table
 const MOCK_SCREENER_RESULTS = [
-    ...RECOMENDATIONS.map(r => ({ ...r, market: 'KOSPI', price: 72000, turnover: 500000000, sector: '반도체' })),
-    { rank: 6, ticker: '005490', name: 'POSCO홀딩스', market: 'KOSPI', price: 450000, turnover: 300000000, sector: '철강', target: 'WAIT', score: 60, weight: '0%' },
-    { rank: 7, ticker: '035720', name: '카카오', market: 'KOSPI', price: 54300, turnover: 150000000, sector: '서비스', target: 'HOLD', score: 55, weight: '0%' },
-    { rank: 8, ticker: '247540', name: '에코프로비엠', market: 'KOSDAQ', price: 280000, turnover: 800000000, sector: '2차전지', target: 'BUY', score: 82, weight: '0%' },
-    { rank: 9, ticker: '068270', name: '셀트리온', market: 'KOSPI', price: 180000, turnover: 120000000, sector: '의약품', target: 'WAIT', score: 58, weight: '0%' },
+    ...RECOMENDATIONS.map((r) => ({ ...r, market: "KOSPI", price: 72000, turnover: 500000000, sector: "Semiconductor" })),
+    { rank: 6, ticker: "005490", name: "POSCO Holdings", market: "KOSPI", price: 450000, turnover: 300000000, sector: "Steel", target: "WAIT", weight: "0%" },
+    { rank: 7, ticker: "035720", name: "Kakao", market: "KOSPI", price: 54300, turnover: 150000000, sector: "Services", target: "HOLD", weight: "0%" },
+    { rank: 8, ticker: "247540", name: "EcoPro BM", market: "KOSDAQ", price: 280000, turnover: 800000000, sector: "Battery", target: "BUY", weight: "0%" },
+    { rank: 9, ticker: "068270", name: "Celltrion", market: "KOSPI", price: 180000, turnover: 120000000, sector: "Pharma", target: "WAIT", weight: "0%" },
     // Duplicate for scroll
-    { rank: 10, ticker: '000270', name: '기아', market: 'KOSPI', price: 95000, turnover: 220000000, sector: '자동차', target: 'BUY', score: 75, weight: '0%' },
+    { rank: 10, ticker: "000270", name: "Kia", market: "KOSPI", price: 95000, turnover: 220000000, sector: "Auto", target: "BUY", weight: "0%" },
 ];
 
 const FILTER_STORAGE_KEY = 'stockmanager_screener_filters';
@@ -233,21 +233,7 @@ export default function Screener() {
             filtered = filtered.filter((item: any) => themeMemberSet.has(item.ticker));
         }
 
-        const turnoverValues = filtered
-            .map((item: any) => Number(item.avg_turnover_krw_20d))
-            .filter((value: number) => Number.isFinite(value) && value > 0)
-            .sort((a, b) => a - b);
-        const rankByValue = new Map<number, number>();
-        turnoverValues.forEach((value, idx) => {
-            rankByValue.set(value, idx);
-        });
-        const denom = turnoverValues.length > 1 ? turnoverValues.length - 1 : 1;
-
         return filtered.map((item: any, index: number) => {
-            const turnoverValue = Number(item.avg_turnover_krw_20d);
-            const score = turnoverValues.length > 0 && Number.isFinite(turnoverValue) && turnoverValue > 0
-                ? Math.max(1, Math.round(((rankByValue.get(turnoverValue) ?? 0) / denom) * 100))
-                : '-';
             return {
             rank: index + 1,
             ticker: item.ticker,
@@ -258,7 +244,6 @@ export default function Screener() {
             price: item.last_price_krw ?? null,
             turnover: item.avg_turnover_krw_20d ?? null,
             target: item.signal ?? '-',
-            score,
         };
         });
     }, [universeItems, selectedIndustries, selectedThemes, selectedIndustryNames, industryMemberSet, themeMemberSet, themeMembers]);
@@ -369,7 +354,7 @@ export default function Screener() {
                             ) : (
                                 selectedIndustries.map((key) => (
                                     <span key={key} className="px-2 py-1 rounded-full text-xs bg-primary/15 text-primary border border-primary/30">
-                                        {industryNameByKey.get(key) || key.replace(/^name:|^code:/, '')}
+                                        {industryNameByKey.get(key) || key.replace(/^name:|^code:/, "")}
                                     </span>
                                 ))
                             )}
@@ -452,7 +437,7 @@ export default function Screener() {
                                     className="text-xs text-text-subtle hover:text-white"
                                     title="Hide theme"
                                 >
-                                    Hide
+                                    숨김
                                 </button>
                             </div>
                         ))}
@@ -465,7 +450,7 @@ export default function Screener() {
                         <div className="flex gap-2">
                             <input
                                 type="text"
-                                placeholder="새 테마 이름"
+                                placeholder="신규 테마 이름"
                                 value={customThemeInput}
                                 onChange={(e) => setCustomThemeInput(e.target.value)}
                                 className="flex-1 bg-background-dark border border-border-dark rounded-lg px-3 py-2 text-white focus:border-primary outline-none"
@@ -480,7 +465,7 @@ export default function Screener() {
                     </div>
                     {hiddenThemes.length > 0 && (
                         <div className="flex flex-col gap-2 border-t border-border-dark pt-3">
-                            <label className="text-xs font-semibold text-text-subtle">숨김된 테마</label>
+                            <label className="text-xs font-semibold text-text-subtle">숨긴 테마</label>
                             <div className="flex flex-wrap gap-2">
                                 {hiddenThemes.map((name) => (
                                     <button
@@ -563,20 +548,19 @@ export default function Screener() {
                     <table className="w-full text-sm text-left">
                         <thead className="text-text-subtle font-medium bg-background-dark">
                             <tr>
-                                <th className="px-4 py-3 font-bold border-b border-border-dark">종목명 (Ticker)</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark">종목명(Ticker)</th>
                                 <th className="px-4 py-3 font-bold border-b border-border-dark">시장</th>
                                 <th className="px-4 py-3 font-bold border-b border-border-dark">업종</th>
                                 <th className="px-4 py-3 font-bold border-b border-border-dark text-right">현재가</th>
                                 <th className="px-4 py-3 font-bold border-b border-border-dark text-right">{turnoverLabel}</th>
-                                <th className="px-4 py-3 font-bold border-b border-border-dark text-center">신호</th>
-                                <th className="px-4 py-3 font-bold border-b border-border-dark text-right">점수</th>
+                                <th className="px-4 py-3 font-bold border-b border-border-dark text-center">상태</th>
                                 <th className="px-4 py-3 font-bold border-b border-border-dark text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border-dark/50">
                             {pagedItems.length === 0 && (
                                 <tr>
-                                    <td className="px-4 py-6 text-center text-sm text-text-subtle" colSpan={8}>
+                                    <td className="px-4 py-6 text-center text-sm text-text-subtle" colSpan={7}>
                                         조건에 맞는 결과가 없습니다.
                                     </td>
                                 </tr>
@@ -608,19 +592,23 @@ export default function Screener() {
                                             : `${(Number(item.turnover) / 100000000).toFixed(1)}100M`}
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                        <span className={clsx(
-                                            "px-2 py-1 rounded text-xs font-bold",
-                                            item.target === 'BUY' ? "bg-green-500/20 text-green-500" :
-                                                item.target === 'SELL' ? "bg-red-500/20 text-red-500" :
-                                                    item.target === 'WAIT' ? "bg-yellow-500/20 text-yellow-500" : "bg-gray-700 text-gray-400"
-                                        )}>
-                                            {item.target || '-'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-right text-yellow-200 font-bold">
-                                        {item.score === '-' || item.score === null || item.score === undefined
-                                            ? '-'
-                                            : item.score}
+                                        {(() => {
+                                            const statusLabel = item.target === "BUY"
+                                                ? "상승"
+                                                : item.target === "SELL"
+                                                    ? "하락"
+                                                    : "보합";
+                                            const statusClass = item.target === "BUY"
+                                                ? "bg-red-500/20 text-red-400"
+                                                : item.target === "SELL"
+                                                    ? "bg-blue-500/20 text-blue-400"
+                                                    : "bg-gray-700 text-gray-200";
+                                            return (
+                                                <span className={clsx("px-2 py-1 rounded text-xs font-bold", statusClass)}>
+                                                    {statusLabel}
+                                                </span>
+                                            );
+                                        })()}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <button
@@ -636,7 +624,7 @@ export default function Screener() {
                                                     : "bg-primary text-white hover:bg-primary/90"
                                             )}
                                         >
-                                            {isWatchlistAdded(item.ticker) ? '추가됨' : '추가'}
+                                            {isWatchlistAdded(item.ticker) ? "추가됨" : "추가"}
                                         </button>
                                     </td>
                                 </tr>

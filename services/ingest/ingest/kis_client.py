@@ -37,7 +37,7 @@ class KisClient:
                 self.access_token = resp.json().get("access_token")
                 return self.access_token
         print(f"KIS Token Error: {resp.text}")
-        raise Exception("Failed to get KIS token")
+        raise Exception(f"KIS token request failed: status={resp.status_code} body={resp.text[:300]}")
 
     def get_current_price(self, ticker: str):
         token = self._get_token()
@@ -227,6 +227,91 @@ class KisClient:
         print(f"KIS Investor Trend Error: {resp.text}")
         return None
 
+    def get_program_trade_daily(self, market_code="0001", date: str | None = None, return_raw: bool = False):
+        """
+        Fetch daily program trading net values.
+        Returns a list of rows if available, or None on failure.
+        """
+        try:
+            token = self._get_token()
+        except Exception as exc:
+            if return_raw:
+                return {
+                    "status": "exception",
+                    "raw": None,
+                    "parsed": None,
+                    "error": {"message": str(exc)},
+                    "tried": [],
+                }
+            return None
+
+        from datetime import datetime
+
+        headers = {
+            "content-type": "application/json; charset=utf-8",
+            "authorization": f"Bearer {token}",
+            "appkey": self.app_key,
+            "appsecret": self.app_secret,
+            "tr_id": "FHPPG04600001",
+            "custtype": "P",
+        }
+
+        target_date = date or datetime.now().strftime("%Y%m%d")
+        market_cls_map = {
+            "0001": "K",  # KOSPI
+            "1001": "Q",  # KOSDAQ
+            "2001": "K",  # KOSPI200 (use KOSPI bucket)
+        }
+        market_cls = market_cls_map.get(market_code, "K")
+        params = {
+            "FID_COND_MRKT_DIV_CODE": "J",
+            "FID_MRKT_CLS_CODE": market_cls,
+            "FID_INPUT_DATE_1": target_date,
+            "FID_INPUT_DATE_2": target_date,
+        }
+
+        path = "/uapi/domestic-stock/v1/quotations/comp-program-trade-daily"
+        url = f"{self.base_url}{path}"
+        resp = requests.get(url, headers=headers, params=params)
+        tried = [{"path": path, "status": resp.status_code}]
+        if resp.status_code == 200:
+            data = resp.json()
+            output1 = data.get("output1")
+            output2 = data.get("output2")
+            output = data.get("output")
+            parsed = []
+            if isinstance(output1, dict) and output1:
+                parsed = output1
+            elif isinstance(output2, list) and output2:
+                parsed = output2
+            elif isinstance(output, list) and output:
+                parsed = output
+            elif isinstance(output, dict) and output:
+                parsed = output
+            if return_raw:
+                return {
+                    "status": resp.status_code,
+                    "raw": data,
+                    "parsed": parsed,
+                    "tried": tried,
+                }
+            return parsed
+        error = {
+            "status": resp.status_code,
+            "body": resp.text[:500],
+            "path": path,
+        }
+        if return_raw:
+            return {
+                "status": resp.status_code,
+                "raw": None,
+                "parsed": None,
+                "error": error,
+                "tried": tried,
+            }
+        print(f"KIS Program Trade Error ({path}): {resp.text}")
+        return None
+
     def get_stock_price(self, stock_code):
         """
         Fetch Current Stock Price (FHKST01010100)
@@ -262,6 +347,9 @@ class KisClient:
         if not self._get_token():
             return []
 
+        from datetime import datetime, timedelta
+        import time
+
         url = f"{self.base_url}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
         headers = {
             "content-type": "application/json; charset=utf-8",
@@ -271,19 +359,79 @@ class KisClient:
             "tr_id": "FHKST03010100",
             "custtype": "P",
         }
-        params = {
-            "FID_COND_MRKT_DIV_CODE": "J",
-            "FID_INPUT_ISCD": stock_code,
-            "FID_INPUT_DATE_1": start_date,
-            "FID_INPUT_DATE_2": end_date,
-            "FID_PERIOD_DIV_CODE": "D",
-            "FID_ORG_ADJ_PRC": "0",
-        }
 
-        resp = requests.get(url, headers=headers, params=params, timeout=10)
-        if resp.status_code == 200:
+        try:
+            target_start = datetime.strptime(start_date, "%Y%m%d").date()
+            target_end = datetime.strptime(end_date, "%Y%m%d").date()
+        except ValueError:
+            print(f"KIS Daily History Error for {stock_code}: invalid date range")
+            return []
+
+        cursor_end = target_end
+        seen_dates: set = set()
+        parsed_rows: list[tuple] = []
+        last_oldest = None
+
+        while cursor_end >= target_start:
+            params = {
+                "FID_COND_MRKT_DIV_CODE": "J",
+                "FID_INPUT_ISCD": stock_code,
+                "FID_INPUT_DATE_1": start_date,
+                "FID_INPUT_DATE_2": cursor_end.strftime("%Y%m%d"),
+                "FID_PERIOD_DIV_CODE": "D",
+                "FID_ORG_ADJ_PRC": "0",
+            }
+            # DEBUG PRINT
+            # print(f"DEBUG: Requesting {stock_code} {start_date} ~ {cursor_end.strftime('%Y%m%d')}")
+            
+            resp = None
+            for attempt in range(3):
+                try:
+                    resp = requests.get(url, headers=headers, params=params, timeout=10)
+                    break
+                except requests.exceptions.RequestException as exc:
+                    if attempt == 2:
+                        print(f"KIS Daily History Error for {stock_code}: {exc}")
+                        return []
+                    time.sleep(1.5 * (attempt + 1))
+            
+            if resp is None or resp.status_code != 200:
+                body = resp.text[:200] if resp is not None else "no_response"
+                print(f"KIS Daily History Error for {stock_code}: {body}")
+                break
+
             data = resp.json()
             rows = data.get("output2") or []
-            return list(reversed(rows))
-        print(f"KIS Daily History Error for {stock_code}: {resp.text[:200]}")
-        return []
+            # print(f"DEBUG: Got {len(rows)} rows for {stock_code}")
+            
+            if not rows:
+                break
+
+            rows = list(reversed(rows))
+            oldest_date = None
+            for row in rows:
+                trade_date_str = row.get("stck_bsop_date")
+                if not trade_date_str:
+                    continue
+                try:
+                    trade_date = datetime.strptime(trade_date_str, "%Y%m%d").date()
+                except ValueError:
+                    continue
+                oldest_date = trade_date
+                if trade_date < target_start:
+                    continue
+                if trade_date in seen_dates:
+                    continue
+                seen_dates.add(trade_date)
+                parsed_rows.append((trade_date, row))
+
+            if oldest_date is None:
+                break
+            if last_oldest == oldest_date:
+                break
+            last_oldest = oldest_date
+            cursor_end = oldest_date - timedelta(days=1)
+            time.sleep(0.25)
+
+        parsed_rows.sort(key=lambda x: x[0])
+        return [row for _, row in parsed_rows]

@@ -104,6 +104,8 @@ export default function Reports() {
     const [selectedCompanyName, setSelectedCompanyName] = useState('');
     const [template, setTemplate] = useState('investment_memo_vc_v1');
     const [isSearching, setIsSearching] = useState(false);
+    const [dartBackfill, setDartBackfill] = useState<any>(null);
+    const [isBackfilling, setIsBackfilling] = useState(false);
 
     const searchCompanies = async (val: string) => {
         setSearchTerm(val);
@@ -128,6 +130,31 @@ export default function Reports() {
         setSelectedCompanyName(c.name);
         setSearchTerm(c.name);
         setSearchResults([]);
+    };
+
+    const fetchDartBackfillStatus = async (companyId: string) => {
+        if (!companyId) return;
+        try {
+            const client = createApiClient(apiBaseUrl);
+            const resp = await client.get(`/reports/dart-backfill/status?company_id=${companyId}`);
+            setDartBackfill(resp.data);
+            setIsBackfilling(resp.data?.status === 'RUNNING');
+        } catch (error) {
+            console.error("Failed to fetch DART backfill status", error);
+        }
+    };
+
+    const handleDartBackfill = async () => {
+        if (!targetCompanyId) return;
+        setIsBackfilling(true);
+        try {
+            const client = createApiClient(apiBaseUrl);
+            const resp = await client.post(`/reports/dart-backfill?company_id=${targetCompanyId}`);
+            setDartBackfill({ status: 'RUNNING', ...resp.data });
+        } catch (error) {
+            console.error("Failed to trigger DART backfill", error);
+            setIsBackfilling(false);
+        }
     };
 
     const fetchReports = async () => {
@@ -362,6 +389,19 @@ export default function Reports() {
         fetchReports();
     }, [apiBaseUrl]);
 
+    useEffect(() => {
+        if (!targetCompanyId) return;
+        fetchDartBackfillStatus(targetCompanyId);
+    }, [targetCompanyId]);
+
+    useEffect(() => {
+        if (!targetCompanyId || dartBackfill?.status !== 'RUNNING') return;
+        const interval = setInterval(() => {
+            fetchDartBackfillStatus(targetCompanyId);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [targetCompanyId, dartBackfill?.status]);
+
     const TABS: { id: Tab; label: string; icon: string }[] = [
         { id: 'builder', label: 'Builder', icon: 'edit_document' },
         { id: 'preview', label: 'Preview', icon: 'visibility' },
@@ -548,6 +588,31 @@ export default function Reports() {
                                 )}
                                 <div className="mt-4">
                                     <DocumentManager companyId={targetCompanyId} />
+                                </div>
+                                <div className="mt-4 flex items-center gap-3">
+                                    <button
+                                        onClick={handleDartBackfill}
+                                        disabled={!targetCompanyId || isBackfilling}
+                                        className={clsx(
+                                            "px-4 py-2 rounded-lg text-xs font-bold transition-colors",
+                                            (!targetCompanyId || isBackfilling)
+                                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                                : "bg-primary text-white hover:bg-blue-600"
+                                        )}
+                                    >
+                                        {isBackfilling ? (
+                                            <span className="flex items-center gap-2">
+                                                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                                공시 3년 확장 중...
+                                            </span>
+                                        ) : '공시 3년 확장'}
+                                    </button>
+                                    {dartBackfill?.status && (
+                                        <span className="text-xs text-text-subtle">
+                                            상태: {dartBackfill.status}
+                                            {dartBackfill.row_count ? ` / ${dartBackfill.row_count}건` : ''}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 

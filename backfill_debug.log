@@ -1,0 +1,1572 @@
+[16:24:39] Starting FAST Backfill (Days=365, Workers=5)
+[16:24:39] Total Tickers to process: 2788
+[16:24:39] Target Period: 20250116 ~ 20260116
+[16:26:08] Starting FAST Backfill (Days=365, Workers=5)
+[16:26:08] Total Tickers to process: 2788
+[16:26:08] Target Period: 20250116 ~ 20260116
+[16:26:08] Fetching 000020...
+[16:28:31] FAIL: 000070: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000070', 'd': datetime.date(2025, 1, 16), 'o': 41839, 'h': 41906, 'l': 41506, 'c': 41906, 'v': 5279, 'turnover_krw': 219911100, 'chg': 266, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:28:31] FAIL: 000050: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000050', 'd': datetime.date(2025, 1, 16), 'o': 6560, 'h': 6590, 'l': 6520, 'c': 6560, 'v': 1788, 'turnover_krw': 11707620, 'chg': -10, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:28:31] FAIL: 000080: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000080', 'd': datetime.date(2025, 1, 16), 'o': 19030, 'h': 19040, 'l': 18850, 'c': 18870, 'v': 252854, 'turnover_krw': 4779421280, 'chg': -90, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:28:31] FAIL: 000020: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000020', 'd': datetime.date(2025, 1, 16), 'o': 6430, 'h': 6440, 'l': 6350, 'c': 6380, 'v': 32293, 'turnover_krw': 206107820, 'chg': 10, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:28:32] FAIL: 000040: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000040', 'd': datetime.date(2025, 1, 16), 'o': 456, 'h': 463, 'l': 449, 'c': 449, 'v': 81887, 'turnover_krw': 37116627, 'chg': -4, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:30:58] FAIL: 000100: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000100', 'd': datetime.date(2025, 1, 16), 'o': 133000, 'h': 138600, 'l': 132200, 'c': 136000, 'v': 2352199, 'turnover_krw': 320365979000, 'chg': 4900, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:30:59] FAIL: 000120: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000120', 'd': datetime.date(2025, 1, 16), 'o': 82300, 'h': 82300, 'l': 80200, 'c': 80900, 'v': 125545, 'turnover_krw': 10136977900, 'chg': -700, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:30:59] FAIL: 000105: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000105', 'd': datetime.date(2025, 1, 16), 'o': 118000, 'h': 123300, 'l': 118000, 'c': 122000, 'v': 32943, 'turnover_krw': 4004351700, 'chg': 4400, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:30:59] FAIL: 000087: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000087', 'd': datetime.date(2025, 1, 16), 'o': 15350, 'h': 15350, 'l': 15200, 'c': 15300, 'v': 1669, 'turnover_krw': 25433520, 'chg': -20, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:30:59] FAIL: 000140: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000140', 'd': datetime.date(2025, 1, 16), 'o': 9000, 'h': 9100, 'l': 8900, 'c': 8950, 'v': 6112, 'turnover_krw': 54649900, 'chg': 20, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:33:21] FAIL: 000145: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000145', 'd': datetime.date(2025, 1, 16), 'o': 11030, 'h': 11030, 'l': 11000, 'c': 11000, 'v': 10, 'turnover_krw': 110060, 'chg': -30, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:33:21] FAIL: 000155: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000155', 'd': datetime.date(2025, 1, 16), 'o': 118000, 'h': 127300, 'l': 118000, 'c': 126700, 'v': 30969, 'turnover_krw': 3876238500, 'chg': 10500, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:33:21] FAIL: 000150: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000150', 'd': datetime.date(2025, 1, 16), 'o': 283000, 'h': 293000, 'l': 283000, 'c': 288000, 'v': 139579, 'turnover_krw': 40143145000, 'chg': 14000, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:33:21] FAIL: 000157: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000157', 'd': datetime.date(2025, 1, 16), 'o': 112300, 'h': 122000, 'l': 112300, 'c': 121200, 'v': 3329, 'turnover_krw': 396818500, 'chg': 10300, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:33:21] FAIL: 000180: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000180', 'd': datetime.date(2025, 1, 16), 'o': 1385, 'h': 1419, 'l': 1383, 'c': 1392, 'v': 37135, 'turnover_krw': 51927399, 'chg': 7, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:35:41] FAIL: 000210: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000210', 'd': datetime.date(2025, 1, 16), 'o': 31150, 'h': 31550, 'l': 30950, 'c': 31250, 'v': 18228, 'turnover_krw': 568142250, 'chg': 350, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:35:41] FAIL: 000220: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000220', 'd': datetime.date(2025, 1, 16), 'o': 4895, 'h': 4900, 'l': 4780, 'c': 4820, 'v': 26965, 'turnover_krw': 130306650, 'chg': -60, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:35:41] FAIL: 000215: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000215', 'd': datetime.date(2025, 1, 16), 'o': 19760, 'h': 19880, 'l': 19460, 'c': 19700, 'v': 1457, 'turnover_krw': 28625550, 'chg': -60, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:35:42] FAIL: 000225: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000225', 'd': datetime.date(2025, 1, 16), 'o': 4780, 'h': 4865, 'l': 4750, 'c': 4790, 'v': 11888, 'turnover_krw': 56836565, 'chg': 5, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:35:42] FAIL: 000227: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000227', 'd': datetime.date(2025, 1, 16), 'o': 9820, 'h': 9820, 'l': 9750, 'c': 9800, 'v': 612, 'turnover_krw': 5987540, 'chg': 0, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:38:03] FAIL: 000230: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000230', 'd': datetime.date(2025, 1, 16), 'o': 6800, 'h': 6920, 'l': 6800, 'c': 6900, 'v': 15241, 'turnover_krw': 104301680, 'chg': 120, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:38:03] FAIL: 000240: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000240', 'd': datetime.date(2025, 1, 16), 'o': 17280, 'h': 17300, 'l': 16840, 'c': 16860, 'v': 113562, 'turnover_krw': 1923640730, 'chg': -440, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:38:03] FAIL: 000250: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000250', 'd': datetime.date(2025, 1, 16), 'o': 159600, 'h': 178000, 'l': 159500, 'c': 171500, 'v': 978380, 'turnover_krw': 167208051200, 'chg': 14600, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:38:03] FAIL: 000270: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000270', 'd': datetime.date(2025, 1, 16), 'o': 104500, 'h': 104800, 'l': 103000, 'c': 103400, 'v': 654359, 'turnover_krw': 67709773100, 'chg': 100, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:38:04] FAIL: 000300: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000300', 'd': datetime.date(2025, 1, 16), 'o': 1984, 'h': 1984, 'l': 1984, 'c': 1984, 'v': 0, 'turnover_krw': 0, 'chg': 0, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:40:25] FAIL: 000325: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000325', 'd': datetime.date(2025, 1, 16), 'o': 30250, 'h': 30250, 'l': 29000, 'c': 29500, 'v': 342, 'turnover_krw': 10019600, 'chg': 150, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:40:25] FAIL: 000370: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000370', 'd': datetime.date(2025, 1, 16), 'o': 4150, 'h': 4185, 'l': 4120, 'c': 4165, 'v': 150437, 'turnover_krw': 624994210, 'chg': 35, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:40:25] FAIL: 000320: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000320', 'd': datetime.date(2025, 1, 16), 'o': 13000, 'h': 13050, 'l': 12930, 'c': 13010, 'v': 3619, 'turnover_krw': 47042220, 'chg': 0, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:40:25] FAIL: 000390: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000390', 'd': datetime.date(2025, 1, 16), 'o': 6210, 'h': 6250, 'l': 6200, 'c': 6240, 'v': 17760, 'turnover_krw': 110367810, 'chg': 30, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:40:26] FAIL: 000400: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000400', 'd': datetime.date(2025, 1, 16), 'o': 2015, 'h': 2035, 'l': 2005, 'c': 2030, 'v': 108697, 'turnover_krw': 219717870, 'chg': 25, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:40:28] FAIL: 0004V0: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '0004V0', 'd': datetime.date(2026, 1, 14), 'o': 17660, 'h': 17710, 'l': 13400, 'c': 17710, 'v': 11748990, 'turnover_krw': 186482164370, 'chg': 4080, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:41:39] FAIL: 0004Y0: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '0004Y0', 'd': datetime.date(2025, 7, 22), 'o': 2130, 'h': 2270, 'l': 1982, 'c': 1987, 'v': 21889900, 'turnover_krw': 45860415679, 'chg': -13, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:42:46] FAIL: 000430: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000430', 'd': datetime.date(2025, 1, 16), 'o': 3950, 'h': 3990, 'l': 3895, 'c': 3895, 'v': 34235, 'turnover_krw': 134166325, 'chg': -40, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:42:46] FAIL: 000490: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000490', 'd': datetime.date(2025, 1, 16), 'o': 10500, 'h': 12670, 'l': 10330, 'c': 12170, 'v': 17473242, 'turnover_krw': 206284659600, 'chg': 2010, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:42:47] FAIL: 000480: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000480', 'd': datetime.date(2025, 1, 16), 'o': 5550, 'h': 5600, 'l': 5540, 'c': 5590, 'v': 6441, 'turnover_krw': 35860550, 'chg': 40, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:42:47] FAIL: 000440: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000440', 'd': datetime.date(2025, 1, 16), 'o': 16490, 'h': 16790, 'l': 16490, 'c': 16700, 'v': 14690, 'turnover_krw': 244920260, 'chg': 220, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:43:59] FAIL: 000500: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000500', 'd': datetime.date(2025, 1, 16), 'o': 65200, 'h': 66400, 'l': 64200, 'c': 64500, 'v': 149584, 'turnover_krw': 9734841500, 'chg': -900, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:45:08] FAIL: 000545: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000545', 'd': datetime.date(2025, 1, 16), 'o': 5160, 'h': 5280, 'l': 5160, 'c': 5260, 'v': 19662, 'turnover_krw': 102817150, 'chg': 150, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:45:08] FAIL: 000520: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000520', 'd': datetime.date(2025, 1, 16), 'o': 14190, 'h': 14730, 'l': 13980, 'c': 14190, 'v': 304165, 'turnover_krw': 4323635430, 'chg': 20, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:45:08] FAIL: 000540: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000540', 'd': datetime.date(2025, 1, 16), 'o': 3420, 'h': 3460, 'l': 3390, 'c': 3445, 'v': 71614, 'turnover_krw': 245349140, 'chg': 50, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:45:08] FAIL: 000590: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000590', 'd': datetime.date(2025, 1, 16), 'o': 67800, 'h': 67800, 'l': 66100, 'c': 67200, 'v': 1125, 'turnover_krw': 75283600, 'chg': -500, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:46:34] FAIL: 000640: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000640', 'd': datetime.date(2025, 1, 16), 'o': 94131, 'h': 95102, 'l': 92577, 'c': 93840, 'v': 11688, 'turnover_krw': 1089402000, 'chg': 0, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:47:41] FAIL: 000660: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000660', 'd': datetime.date(2025, 1, 16), 'o': 208500, 'h': 210000, 'l': 206500, 'c': 210000, 'v': 6029645, 'turnover_krw': 1260003720050, 'chg': 11800, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:47:41] FAIL: 000680: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000680', 'd': datetime.date(2025, 1, 16), 'o': 2935, 'h': 3055, 'l': 2905, 'c': 3030, 'v': 102963, 'turnover_krw': 309417550, 'chg': 105, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:47:41] FAIL: 000670: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000670', 'd': datetime.date(2025, 1, 16), 'o': 37844, 'h': 38233, 'l': 37649, 'c': 38136, 'v': 9035, 'turnover_krw': 342969000, 'chg': 340, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:47:41] FAIL: 000650: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000650', 'd': datetime.date(2025, 1, 16), 'o': 36250, 'h': 36500, 'l': 35950, 'c': 36400, 'v': 288, 'turnover_krw': 10420200, 'chg': 150, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:47:54] FAIL: 0007C0: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '0007C0', 'd': datetime.date(2025, 12, 16), 'o': 45900, 'h': 77000, 'l': 38800, 'c': 67000, 'v': 30320190, 'turnover_krw': 1761241548775, 'chg': 47500, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:48:54] FAIL: 000700: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000700', 'd': datetime.date(2025, 1, 16), 'o': 5370, 'h': 5370, 'l': 5270, 'c': 5340, 'v': 5540, 'turnover_krw': 29325420, 'chg': -10, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:50:01] FAIL: 000720: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000720', 'd': datetime.date(2025, 1, 16), 'o': 26200, 'h': 26850, 'l': 26050, 'c': 26850, 'v': 759420, 'turnover_krw': 20160211100, 'chg': 950, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:50:02] FAIL: 000725: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000725', 'd': datetime.date(2025, 1, 16), 'o': 46350, 'h': 47000, 'l': 46000, 'c': 46000, 'v': 1145, 'turnover_krw': 53011400, 'chg': -350, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:50:02] FAIL: 000760: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000760', 'd': datetime.date(2025, 1, 16), 'o': 10640, 'h': 10740, 'l': 10640, 'c': 10740, 'v': 314, 'turnover_krw': 3344250, 'chg': 100, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:50:15] FAIL: 000810: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000810', 'd': datetime.date(2025, 1, 16), 'o': 360500, 'h': 371500, 'l': 358500, 'c': 370000, 'v': 84992, 'turnover_krw': 31338671000, 'chg': 12000, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:51:16] FAIL: 000815: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000815', 'd': datetime.date(2025, 1, 16), 'o': 272500, 'h': 276000, 'l': 271500, 'c': 272000, 'v': 8712, 'turnover_krw': 2386931500, 'chg': 1000, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:52:23] FAIL: 000850: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000850', 'd': datetime.date(2025, 1, 16), 'o': 27100, 'h': 27100, 'l': 26950, 'c': 27000, 'v': 1050, 'turnover_krw': 28325300, 'chg': -100, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:52:25] FAIL: 000860: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000860', 'd': datetime.date(2025, 1, 16), 'o': 13205, 'h': 13255, 'l': 13030, 'c': 13205, 'v': 6419, 'turnover_krw': 84406950, 'chg': 0, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:52:25] FAIL: 000880: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000880', 'd': datetime.date(2025, 1, 16), 'o': 28850, 'h': 29650, 'l': 28600, 'c': 29650, 'v': 279402, 'turnover_krw': 8152391200, 'chg': 950, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:52:37] FAIL: 00088K: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '00088K', 'd': datetime.date(2025, 1, 16), 'o': 15000, 'h': 15290, 'l': 14910, 'c': 15130, 'v': 48140, 'turnover_krw': 729654440, 'chg': 150, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:53:23] FAIL: 0008Z0: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '0008Z0', 'd': datetime.date(2025, 8, 19), 'o': 51000, 'h': 58400, 'l': 44900, 'c': 45000, 'v': 11843928, 'turnover_krw': 624345275475, 'chg': 15000, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:53:37] FAIL: 000890: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000890', 'd': datetime.date(2025, 1, 16), 'o': 489, 'h': 500, 'l': 489, 'c': 489, 'v': 237196, 'turnover_krw': 116906605, 'chg': -1, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:53:54] FAIL: 0009K0: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '0009K0', 'd': datetime.date(2025, 12, 4), 'o': 44000, 'h': 44000, 'l': 42000, 'c': 44000, 'v': 3793239, 'turnover_krw': 166393670325, 'chg': 33000, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:54:45] FAIL: 000950: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000950', 'd': datetime.date(2025, 1, 16), 'o': 18340, 'h': 19000, 'l': 18340, 'c': 18410, 'v': 305, 'turnover_krw': 5628720, 'chg': -110, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:54:45] FAIL: 000910: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000910', 'd': datetime.date(2025, 1, 16), 'o': 5350, 'h': 5420, 'l': 5300, 'c': 5390, 'v': 170420, 'turnover_krw': 913807920, 'chg': 90, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:54:58] FAIL: 000970: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000970', 'd': datetime.date(2025, 1, 16), 'o': 6140, 'h': 6140, 'l': 6070, 'c': 6120, 'v': 7195, 'turnover_krw': 43852730, 'chg': 30, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:55:43] FAIL: 000990: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '000990', 'd': datetime.date(2025, 1, 16), 'o': 34200, 'h': 34350, 'l': 33450, 'c': 33500, 'v': 132200, 'turnover_krw': 4458396950, 'chg': -250, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:56:16] FAIL: 001000: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '001000', 'd': datetime.date(2025, 1, 16), 'o': 997, 'h': 1006, 'l': 984, 'c': 989, 'v': 26931, 'turnover_krw': 26644103, 'chg': -18, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:57:06] FAIL: 001020: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '001020', 'd': datetime.date(2025, 1, 16), 'o': 804, 'h': 807, 'l': 798, 'c': 800, 'v': 30776, 'turnover_krw': 24727225, 'chg': -1, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:57:08] FAIL: 001040: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '001040', 'd': datetime.date(2025, 1, 16), 'o': 94900, 'h': 97400, 'l': 94300, 'c': 96400, 'v': 68607, 'turnover_krw': 6572094000, 'chg': 2500, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:57:19] FAIL: 001045: Error - (psycopg.errors.UndefinedColumn) "change" 칼럼은 "price_daily" 릴레이션(relation)에 없음
+LINE 4:                     turnover_krw, change, change_rate, creat...
+                                          ^
+[SQL: 
+                INSERT INTO price_daily (
+                    ticker, trade_date, open, high, low, close, volume, 
+                    turnover_krw, change, change_rate, created_at
+                ) VALUES (
+                    %(t)s, %(d)s, %(o)s, %(h)s, %(l)s, %(c)s, %(v)s, %(turnover_krw)s, %(chg)s, %(rate)s, NOW()
+                )
+                ON CONFLICT (ticker, trade_date) DO UPDATE SET
+                    open = EXCLUDED.open,
+                    high = EXCLUDED.high,
+                    low = EXCLUDED.low,
+                    close = EXCLUDED.close,
+                    volume = EXCLUDED.volume,
+                    turnover_krw = EXCLUDED.turnover_krw,
+                    change = EXCLUDED.change,
+                    change_rate = EXCLUDED.change_rate
+            ]
+[parameters: {'t': '001045', 'd': datetime.date(2025, 1, 16), 'o': 57000, 'h': 57300, 'l': 56600, 'c': 57200, 'v': 1311, 'turnover_krw': 74818000, 'chg': 600, 'rate': 0.0}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[16:57:47] Starting FAST Backfill (Days=365, Workers=5)
+[16:57:47] Total Tickers to process: 2788
+[16:57:47] Target Period: 20250116 ~ 20260116
+[16:57:47] Fetching 000020...
+[17:02:24] Starting FAST Backfill (Days=365, Workers=5)
+[17:03:30] Total Tickers to process: 2788
+[17:03:30] Target Period: 20250116 ~ 20260116
+[17:03:30] Fetching 000020...
+[17:05:03] Starting FAST Backfill (Days=365, Workers=5)
+[17:05:04] Total Tickers to process: 2788
+[17:05:04] Target Period: 20250116 ~ 20260116
+[17:05:04] Fetching 000020...
+[17:29:55] Progress: 50/2788 (Last: 000725: Saved 243 rows)
+[17:52:32] Progress: 100/2788 (Last: 001510: Saved 243 rows)
+[18:17:07] Progress: 150/2788 (Last: 002390: Saved 243 rows)
+[18:41:56] Progress: 200/2788 (Last: 003350: Saved 243 rows)
+[19:05:12] Progress: 250/2788 (Last: 004270: Saved 243 rows)
+[19:29:39] Progress: 300/2788 (Last: 005320: Saved 243 rows)
+[19:41:54] Fetching 005930...
+[19:54:27] Progress: 350/2788 (Last: 006340: Saved 243 rows)
+[20:17:49] Progress: 400/2788 (Last: 007810: Saved 243 rows)
+[20:42:17] Progress: 450/2788 (Last: 009450: Saved 243 rows)
+[21:02:42] Progress: 500/2788 (Last: 011090: Saved 243 rows)
+[21:27:12] Progress: 550/2788 (Last: 013310: Saved 243 rows)
+[21:51:53] Progress: 600/2788 (Last: 016450: Saved 243 rows)
+[22:17:08] Progress: 650/2788 (Last: 019540: Saved 243 rows)
+[22:43:08] Progress: 700/2788 (Last: 024720: Saved 243 rows)
+[23:09:21] Progress: 750/2788 (Last: 028300: Saved 243 rows)
+[23:35:14] Progress: 800/2788 (Last: 033130: Saved 243 rows)
+[00:01:28] Progress: 850/2788 (Last: 035890: Saved 243 rows)
+[00:27:42] Progress: 900/2788 (Last: 038390: Saved 243 rows)
+[00:53:44] Progress: 950/2788 (Last: 042040: Saved 243 rows)
+[01:19:45] Progress: 1000/2788 (Last: 046440: Saved 243 rows)
+[01:45:55] Progress: 1050/2788 (Last: 051490: Saved 243 rows)
+[02:12:00] Progress: 1100/2788 (Last: 054180: Saved 243 rows)
+[02:38:04] Progress: 1150/2788 (Last: 060260: Saved 243 rows)
+[03:03:33] Progress: 1200/2788 (Last: 065510: Saved 243 rows)
+[03:29:45] Progress: 1250/2788 (Last: 068760: Saved 243 rows)
+[03:55:59] Progress: 1300/2788 (Last: 074610: Saved 243 rows)
+[04:21:59] Progress: 1350/2788 (Last: 081000: Saved 243 rows)
+[04:47:57] Progress: 1400/2788 (Last: 086670: Saved 243 rows)
+[05:13:57] Progress: 1450/2788 (Last: 091340: Saved 243 rows)
+[05:40:07] Progress: 1500/2788 (Last: 095720: Saved 243 rows)
+[06:05:59] Progress: 1550/2788 (Last: 101360: Saved 243 rows)
+[06:32:04] Progress: 1600/2788 (Last: 109080: Saved 243 rows)
+[06:57:17] Progress: 1650/2788 (Last: 121600: Saved 243 rows)
+[07:22:06] Progress: 1700/2788 (Last: 130740: Saved 243 rows)
+[07:46:39] Progress: 1750/2788 (Last: 142760: Saved 243 rows)
+[08:11:42] Progress: 1800/2788 (Last: 163730: Saved 243 rows)
+[08:36:20] Progress: 1850/2788 (Last: 187870: Saved 243 rows)
+[09:01:27] Progress: 1900/2788 (Last: 200880: Saved 243 rows)
+[09:26:11] Progress: 1950/2788 (Last: 214610: Saved 243 rows)
+[09:52:50] Progress: 2000/2788 (Last: 225570: Saved 243 rows)
+[10:19:09] Progress: 2050/2788 (Last: 241560: Saved 243 rows)
+[10:45:00] Progress: 2100/2788 (Last: 259630: Saved 243 rows)
+[11:08:29] Progress: 2150/2788 (Last: 272450: Saved 243 rows)
+[11:31:54] Progress: 2200/2788 (Last: 290740: Saved 243 rows)
+[11:55:49] Progress: 2250/2788 (Last: 307180: Saved 243 rows)
+[12:18:54] Progress: 2300/2788 (Last: 322000: Saved 243 rows)
+[12:42:28] Progress: 2350/2788 (Last: 340570: Saved 243 rows)
+[13:07:41] Progress: 2400/2788 (Last: 357580: Saved 243 rows)
+[13:31:33] Progress: 2450/2788 (Last: 376980: Saved 243 rows)
+[13:55:49] Progress: 2500/2788 (Last: 396270: Saved 243 rows)
+[14:19:28] Progress: 2550/2788 (Last: 419530: Saved 243 rows)
+[14:43:44] Progress: 2600/2788 (Last: 450940: Saved 243 rows)
+[15:05:46] Progress: 2650/2788 (Last: 460930: Saved 243 rows)
+[15:27:31] Progress: 2700/2788 (Last: 474660: Saved 243 rows)
+[15:47:55] Progress: 2750/2788 (Last: 488280: Saved 78 rows)
+[16:03:36] Finished. Success: 2788, Fail: 0

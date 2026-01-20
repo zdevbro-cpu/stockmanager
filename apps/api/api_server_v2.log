@@ -1,0 +1,16 @@
+INFO:     Will watch for changes in these directories: ['C:\\ProjectCode\\stockmanager\\apps\\api']
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+INFO:     Started reloader process [31340] using WatchFiles
+C:\ProjectCode\stockmanager\apps\api\app\services\report_service.py:4: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [31144]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app\routers\ingest.py'. Reloading...

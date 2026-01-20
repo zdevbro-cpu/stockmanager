@@ -33,7 +33,7 @@ def list_nodes(
         stmt = stmt.where(ClassificationNode.level == level)
     if q:
         stmt = stmt.where(ClassificationNode.name.ilike(f"%{q}%"))
-    rows = db.execute(stmt.order_by(ClassificationNode.code.asc()).limit(5000)).scalars().all()
+    rows = db.execute(stmt.order_by(ClassificationNode.code.asc())).scalars().all()
     return {"items": [
         {
             "taxonomy_id": r.taxonomy_id,

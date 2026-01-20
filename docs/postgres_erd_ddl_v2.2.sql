@@ -147,6 +147,18 @@ CREATE TABLE IF NOT EXISTS macro_series (
   PRIMARY KEY (series_code, obs_date)
 );
 
+CREATE TABLE IF NOT EXISTS ingest_run_log (
+  run_id      BIGSERIAL PRIMARY KEY,
+  job_id      TEXT NOT NULL,
+  status      TEXT NOT NULL,
+  started_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  finished_at TIMESTAMPTZ,
+  row_count   INTEGER,
+  message     TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_ingest_run_log_job_started ON ingest_run_log(job_id, started_at DESC);
+
 CREATE TABLE IF NOT EXISTS feature_snapshot (
   as_of_date     DATE NOT NULL,
   ticker         TEXT NOT NULL,

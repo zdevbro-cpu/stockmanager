@@ -68,21 +68,7 @@ export default function Layout() {
                         {NAV_ITEMS.find(n => n.path === location.pathname)?.label}
                     </div>
 
-                    {/* Right Actions */}
-                    <div className="flex items-center gap-3">
-                        <div className="hidden md:flex relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-subtle text-[18px]">search</span>
-                            <input
-                                type="text"
-                                placeholder="Search ticker..."
-                                className="h-9 w-64 bg-card-dark border border-border-dark rounded-lg pl-9 pr-4 text-sm text-white focus:outline-none focus:border-primary placeholder:text-text-subtle/50"
-                            />
-                        </div>
-                        <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors">
-                            <span className="material-symbols-outlined text-text-subtle text-[22px]">notifications</span>
-                            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-background-dark"></span>
-                        </button>
-                    </div>
+                    <div className="flex items-center gap-3" />
                 </header>
 
                 {/* Content */}

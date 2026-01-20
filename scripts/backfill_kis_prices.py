@@ -16,7 +16,7 @@ def load_watchlist_tickers() -> list[str]:
 
 def main():
     parser = argparse.ArgumentParser(description="Backfill KIS daily prices.")
-    parser.add_argument("--days", type=int, default=90, help="Number of days to backfill.")
+    parser.add_argument("--days", type=int, default=252, help="Number of days to backfill.")
     parser.add_argument("--tickers", type=str, default="", help="Comma-separated tickers.")
     parser.add_argument("--watchlist", action="store_true", help="Use watchlist tickers.")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of tickers when using universe.")

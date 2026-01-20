@@ -17,3 +17,8 @@
 body {
   @apply bg-background-light dark:bg-background-dark;
 }
+
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.9;
+}

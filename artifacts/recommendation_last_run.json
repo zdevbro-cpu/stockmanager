@@ -1,0 +1,12 @@
+{
+  "as_of_date": "2026-01-15",
+  "strategy_id": "prod_v1",
+  "strategy_version": "1.0",
+  "universe_total": 2788,
+  "after_min_price": 2295,
+  "after_min_turnover": 199,
+  "after_indicators": 199,
+  "final_top_n": 50,
+  "fallback_used": false,
+  "status": "SUCCESS"
+}

@@ -12,6 +12,13 @@ export interface IndexData {
     up: boolean;
 }
 
+type QueryOptions = {
+    enabled?: boolean;
+    staleTime?: number;
+    refetchInterval?: number;
+    refetchOnWindowFocus?: boolean;
+};
+
 // Hooks
 
 export const useTopIndices = () => {
@@ -28,6 +35,37 @@ export const useTopIndices = () => {
     });
 };
 
+export const useFxRate = () => {
+    const { apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['fx-rate'],
+        queryFn: async () => {
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/ecos/fx');
+            return data;
+        },
+        staleTime: 60000,
+        refetchInterval: 900000,
+        retry: false,
+    });
+};
+
+export const useMarketBreadth = () => {
+    const { apiBaseUrl } = useSettings();
+    return useQuery({
+        queryKey: ['market-breadth'],
+        queryFn: async () => {
+            const client = createApiClient(apiBaseUrl);
+            const { data } = await client.get('/market/breadth');
+            return data;
+        },
+        staleTime: 0,
+        refetchInterval: 60000,
+        refetchOnWindowFocus: true,
+        retry: false,
+    });
+};
+
 export const useInvestorTrends = () => {
     const { isDemoMode, apiBaseUrl } = useSettings();
     return useQuery({
@@ -40,7 +78,7 @@ export const useInvestorTrends = () => {
     });
 };
 
-export const usePopularSearches = () => {
+export const usePopularSearches = (options?: QueryOptions) => {
     const { isDemoMode, apiBaseUrl } = useSettings();
     return useQuery({
         queryKey: ['popularSearches'],
@@ -49,6 +87,10 @@ export const usePopularSearches = () => {
             const { data } = await client.get('/popular-searches');
             return data;
         },
+        enabled: options?.enabled,
+        staleTime: options?.staleTime,
+        refetchInterval: options?.refetchInterval,
+        refetchOnWindowFocus: options?.refetchOnWindowFocus,
     });
 };
 
@@ -64,7 +106,7 @@ export const useAllPopularSearches = () => {
     });
 };
 
-export const useThemeRankings = () => {
+export const useThemeRankings = (options?: QueryOptions) => {
     const { isDemoMode, apiBaseUrl } = useSettings();
     return useQuery({
         queryKey: ['themeRankings'],
@@ -75,10 +117,14 @@ export const useThemeRankings = () => {
             const { data } = await client.get('/themes/rankings');
             return data;
         },
+        enabled: options?.enabled,
+        staleTime: options?.staleTime,
+        refetchInterval: options?.refetchInterval,
+        refetchOnWindowFocus: options?.refetchOnWindowFocus,
     });
 };
 
-export const useIndustryRankings = () => {
+export const useIndustryRankings = (options?: QueryOptions) => {
     const { isDemoMode, apiBaseUrl } = useSettings();
     return useQuery({
         queryKey: ['industryRankings'],
@@ -89,6 +135,10 @@ export const useIndustryRankings = () => {
             const { data } = await client.get('/industries/rankings');
             return data;
         },
+        enabled: options?.enabled,
+        staleTime: options?.staleTime,
+        refetchInterval: options?.refetchInterval,
+        refetchOnWindowFocus: options?.refetchOnWindowFocus,
     });
 };
 
@@ -174,11 +224,11 @@ export const useRecommendations = (params?: {
     return useQuery({
         queryKey: ['recommendations', params],
         queryFn: async () => {
-            if (isDemoMode) return RECOMENDATIONS;
+            if (isDemoMode) return { items: RECOMENDATIONS };
             const client = createApiClient(apiBaseUrl);
             const { data } = await client.get('/recommendations', { params });
-            if (Array.isArray(data)) return data;
-            return data?.items ?? [];
+            if (Array.isArray(data)) return { items: data };
+            return data ?? { items: [] };
         },
         retry: false,
     });
@@ -209,6 +259,7 @@ export const useRecommendationRunStatus = () => {
             return data;
         },
         staleTime: 10000,
+        refetchInterval: 3000,
         retry: false,
     });
 };

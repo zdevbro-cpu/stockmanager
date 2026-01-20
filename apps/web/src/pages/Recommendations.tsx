@@ -11,6 +11,8 @@ export default function Recommendations() {
     const queryClient = useQueryClient();
     const today = new Date().toISOString().slice(0, 10);
     const [asOfDate, setAsOfDate] = useState(today);
+    const [autoDate, setAutoDate] = useState(true);
+    const [isManualDate, setIsManualDate] = useState(false);
     const [strategyId, setStrategyId] = useState('prod_v1');
     const [strategyVersion, setStrategyVersion] = useState('1.0');
     const [topN, setTopN] = useState(5);
@@ -34,6 +36,7 @@ export default function Recommendations() {
     const [createError, setCreateError] = useState<string | null>(null);
     const [isRunning, setIsRunning] = useState(false);
     const [runError, setRunError] = useState<string | null>(null);
+    const [lastRunStatus, setLastRunStatus] = useState<string | null>(null);
 
     const {
         data: strategies,
@@ -47,13 +50,23 @@ export default function Recommendations() {
         isError: isRecommendationsError,
         error: recommendationsError,
         isFetching: isRecommendationsFetching,
-    } = useRecommendations({
-        as_of_date: asOfDate,
-        strategy_id: strategyId,
-        strategy_version: strategyVersion,
-    });
+    } = useRecommendations(
+        autoDate
+            ? {
+                strategy_id: strategyId,
+                strategy_version: strategyVersion,
+            }
+            : {
+                as_of_date: asOfDate,
+                strategy_id: strategyId,
+                strategy_version: strategyVersion,
+            }
+    );
     const [selectedItem, setSelectedItem] = useState<any>(null);
-    const rows = useMemo(() => recommendations ?? [], [recommendations]);
+    const rows = useMemo(() => recommendations?.items ?? [], [recommendations]);
+    const effectiveDate = recommendations?.as_of_date ?? null;
+    const requestedDate = recommendations?.requested_as_of_date ?? null;
+    const displayRows = useMemo(() => rows.slice(0, Math.max(1, topN)), [rows, topN]);
     const maxScore = useMemo(() => {
         if (!rows.length) return null;
         const scores = rows.map((item: any) => Number(item.score)).filter((v: number) => !Number.isNaN(v));
@@ -89,6 +102,34 @@ export default function Recommendations() {
         setParamOverrides({});
     }, [strategyId, strategyVersion]);
 
+    useEffect(() => {
+        if (!autoDate || !effectiveDate) return;
+        if (isManualDate) return;
+        if (effectiveDate !== asOfDate) {
+            setAsOfDate(effectiveDate);
+        }
+    }, [autoDate, effectiveDate, asOfDate, isManualDate]);
+
+    useEffect(() => {
+        const status = runStatus?.status ?? null;
+        if (!status || status === lastRunStatus) return;
+        setLastRunStatus(status);
+        if (status === 'SUCCESS') {
+            queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+        }
+    }, [runStatus, lastRunStatus, queryClient]);
+
+    useEffect(() => {
+        const status = runStatus?.status ?? null;
+        if (status === 'RUNNING') {
+            setIsRunning(true);
+            return;
+        }
+        if (status === 'SUCCESS' || status === 'FAILED' || status === 'ERROR') {
+            setIsRunning(false);
+        }
+    }, [runStatus]);
+
     const getErrorMessage = (err: any, fallback: string) => {
         const detail = err?.response?.data?.detail;
         if (detail) return String(detail);
@@ -107,6 +148,60 @@ export default function Recommendations() {
         const cleaned = value.replace(/,/g, '');
         const parsed = Number(cleaned);
         return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const escapeCsv = (value: unknown) => {
+        if (value === null || value === undefined) return '';
+        const str = String(value);
+        if (/[",\n]/.test(str)) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    };
+
+    const handleDownloadCsv = () => {
+        if (!displayRows.length) return;
+        const scoreTo100 = (value: number | null | undefined) => {
+            if (value === null || value === undefined || maxScore === null || maxScore === 0) return '';
+            return ((Number(value) / maxScore) * 100).toFixed(3);
+        };
+        const headers = [
+            'as_of_date',
+            'strategy_id',
+            'strategy_version',
+            'ticker',
+            'name_ko',
+            'rank',
+            'score',
+            'target_weight',
+            'target_price_low',
+            'target_price_high',
+        ];
+        const lines = [
+            headers.join(','),
+            ...displayRows.map((row: any) => ([
+                row.as_of_date ?? effectiveDate ?? asOfDate,
+                row.strategy_id,
+                row.strategy_version,
+                row.ticker,
+                row.name_ko ?? row.name ?? '',
+                row.rank !== null && row.rank !== undefined ? Math.round(Number(row.rank)) : '',
+                scoreTo100(row.score),
+                row.target_weight,
+                row.target_price_low ?? '',
+                row.target_price_high ?? row.target_price_low ?? '',
+            ].map(escapeCsv).join(',')))
+        ];
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recommendations_${strategyId}_${strategyVersion}_${effectiveDate ?? asOfDate}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
     };
 
     const handleRun = async () => {
@@ -130,8 +225,9 @@ export default function Recommendations() {
             }, 1500);
         } catch (err: any) {
             setRunError(getErrorMessage(err, 'Failed to run recommendation job.'));
-        } finally {
             setIsRunning(false);
+        } finally {
+            // Keep running state until run-status reports completion.
         }
     };
 
@@ -198,8 +294,12 @@ export default function Recommendations() {
                     <input
                         type="date"
                         value={asOfDate}
-                        onChange={(e) => setAsOfDate(e.target.value)}
-                        className="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-primary"
+                        onChange={(e) => {
+                            setAsOfDate(e.target.value);
+                            setAutoDate(false);
+                            setIsManualDate(true);
+                        }}
+                        className="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-primary date-input"
                     />
                     <select
                         value={`${strategyId}:${strategyVersion}`}
@@ -241,9 +341,21 @@ export default function Recommendations() {
                             isRunning ? "bg-gray-700 text-gray-400 cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80"
                         )}
                     >
-                        {isRunning ? 'Running...' : 'Run Recommendations'}
+                        {isRunning ? (
+                            <span className="flex items-center gap-2">
+                                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Running...
+                            </span>
+                        ) : 'Run Worker'}
                     </button>
-                    <button className="bg-card-dark float-right border border-border-dark hover:bg-white/5 text-white p-2 rounded-lg">
+                    <button
+                        onClick={handleDownloadCsv}
+                        disabled={!displayRows.length}
+                        className={clsx(
+                            "bg-card-dark float-right border border-border-dark text-white p-2 rounded-lg",
+                            displayRows.length ? "hover:bg-white/5" : "opacity-50 cursor-not-allowed"
+                        )}
+                    >
                         <span className="material-symbols-outlined">download</span>
                     </button>
                 </div>
@@ -306,7 +418,7 @@ export default function Recommendations() {
                 </div>
             )}
             <div className="flex flex-col gap-1 text-xs text-text-subtle">
-                <span>추천 결과: {rows.length}건</span>
+                <span>추천 결과: {displayRows.length}건</span>
                 {runStatus?.status && (
                     <span>
                         필터 통과: 전체 {runStatus.universe_total ?? '-'} →
@@ -314,6 +426,27 @@ export default function Recommendations() {
                         거래대금 {runStatus.after_min_turnover ?? '-'} →
                         지표 {runStatus.after_indicators ?? '-'} →
                         최종 {runStatus.final_top_n ?? '-'}
+                    </span>
+                )}
+                {topN > rows.length && (
+                    <span>
+                        요청한 추천 개수({topN})보다 현재 데이터가 적습니다({rows.length}).
+                        더 늘리려면 Run Worker 실행이 필요합니다.
+                    </span>
+                )}
+                {requestedDate && effectiveDate && requestedDate !== effectiveDate && (
+                    <span>
+                        뫄택일 데이터 없음. 최신 추천일: {effectiveDate}
+                        <button
+                            onClick={() => {
+                                setAsOfDate(effectiveDate);
+                                setAutoDate(false);
+                                setIsManualDate(true);
+                            }}
+                            className="text-primary hover:text-white transition-colors ml-2"
+                        >
+                            최신 날짜로 이동
+                        </button>
                     </span>
                 )}
                 <button
@@ -465,7 +598,7 @@ export default function Recommendations() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border-dark">
-                            {rows.length === 0 ? (
+                            {displayRows.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-8 text-center text-text-subtle">
                                         {isRecommendationsFetching
@@ -473,7 +606,7 @@ export default function Recommendations() {
                                             : 'No recommendations yet. Run recommendations to generate results.'}
                                     </td>
                                 </tr>
-                            ) : rows.map((item: any) => (
+                            ) : displayRows.map((item: any) => (
                                 <tr key={item.ticker} className="group hover:bg-white/5 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/30 text-white font-bold text-sm">

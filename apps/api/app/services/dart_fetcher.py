@@ -34,30 +34,40 @@ def fetch_business_report_text(corp_code: str) -> str:
     try:
         # Just simple recent search. In prod, careful date range needed.
         url_list = f"{DART_BASE_URL}/list.json"
-        params = {
-            "crtfc_key": api_key,
-            "corp_code": corp_code,
-            "bgn_de": "20230101", # Should be dynamic
-            "end_de": "20251231",
-            "pblntf_ty": "A", # Regular disclosure
-            "page_count": 10
-        }
-        resp = requests.get(url_list, params=params, timeout=10)
-        data = resp.json()
-        
-        if data.get('status') != '000' or not data.get('list'):
-            print(f"DART List Error: {data.get('message')}")
-            return ""
-
+        page_no = 1
         target_rcp_no = None
-        for item in data['list']:
-            # Prioritize Annual Report (사업보고서), then Quarter
-            rpt_name = item.get('report_nm', '')
-            if '사업보고서' in rpt_name or '분기보고서' in rpt_name or '반기보고서' in rpt_name:
-                target_rcp_no = item.get('rcept_no')
-                print(f"Found Report: {rpt_name} ({target_rcp_no})")
+        while True:
+            params = {
+                "crtfc_key": api_key,
+                "corp_code": corp_code,
+                "bgn_de": "20230101", # Should be dynamic
+                "end_de": "20251231",
+                "pblntf_ty": "A", # Regular disclosure
+                "page_count": 100,
+                "page_no": page_no,
+            }
+            resp = requests.get(url_list, params=params, timeout=10)
+            data = resp.json()
+
+            if data.get('status') != '000':
+                print(f"DART List Error: {data.get('message')}")
+                return ""
+
+            list_data = data.get('list') or []
+            if not list_data:
                 break
-        
+
+            for item in list_data:
+                # Prioritize Annual Report (사업/분기/반기)
+                rpt_name = item.get('report_nm', '')
+                if '사업보고서' in rpt_name or '분기보고서' in rpt_name or '반기보고서' in rpt_name:
+                    target_rcp_no = item.get('rcept_no')
+                    print(f"Found Report: {rpt_name} ({target_rcp_no})")
+                    break
+            if target_rcp_no:
+                break
+            page_no += 1
+
         if not target_rcp_no:
             return ""
 

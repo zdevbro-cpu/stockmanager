@@ -239,6 +239,15 @@ def run(as_of: date, params: StrategyParams) -> None:
         now_ts = datetime(as_of.year, as_of.month, as_of.day, 15, 30, tzinfo=timezone.utc)
         top_tickers = set(top["ticker"].tolist())
 
+        # Idempotent signal write for reruns on same date/horizon.
+        session.execute(
+            delete(TimingSignalRow).where(
+                TimingSignalRow.ts == now_ts,
+                TimingSignalRow.horizon == "1d",
+                TimingSignalRow.ticker.in_(top_tickers),
+            )
+        )
+
         for _, r in latest2[latest2["ticker"].isin(top_tickers)].iterrows():
             if np.isnan(r["ma_5"]) or np.isnan(r["ma_20"]):
                 continue

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import datetime
+import os
+import sys
 
 from ..auth import get_current_user
 from ..db import get_db
@@ -9,6 +11,29 @@ from ..schemas import ReportRequestCreate
 from ..services.report_service import generate_ai_report
 
 router = APIRouter(tags=["Reports"])
+
+INGEST_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../services/ingest"))
+if INGEST_PATH not in sys.path:
+    sys.path.append(INGEST_PATH)
+
+def _ensure_ingest_run_log(db: Session) -> None:
+    db.execute(text("""
+        CREATE TABLE IF NOT EXISTS ingest_run_log (
+          run_id      BIGSERIAL PRIMARY KEY,
+          job_id      TEXT NOT NULL,
+          status      TEXT NOT NULL,
+          started_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+          finished_at TIMESTAMPTZ,
+          row_count   INTEGER,
+          message     TEXT,
+          created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """))
+    db.execute(text("""
+        CREATE INDEX IF NOT EXISTS idx_ingest_run_log_job_started
+        ON ingest_run_log(job_id, started_at DESC)
+    """))
+    db.commit()
 
 
 from fastapi import Response
@@ -165,4 +190,93 @@ def create_report(req: ReportRequestCreate, background_tasks: BackgroundTasks, _
         "template": req.template,
         "status": "PENDING",
         "message": "AI Report generation started in background."
+    }
+
+
+@router.post("/reports/dart-backfill")
+def trigger_dart_backfill(company_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    row = db.execute(
+        text("SELECT corp_code, name_ko FROM company WHERE company_id = :cid"),
+        {"cid": company_id},
+    ).fetchone()
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="corp_code not found for company")
+
+    corp_code, name_ko = row
+    job_id = f"dart_backfill:{corp_code}"
+    _ensure_ingest_run_log(db)
+    run_id = db.execute(
+        text("""
+            INSERT INTO ingest_run_log (job_id, status, started_at)
+            VALUES (:job_id, 'RUNNING', NOW())
+            RETURNING run_id
+        """),
+        {"job_id": job_id},
+    ).scalar()
+    db.commit()
+
+    def run_task():
+        from ingest.dart_loader import fetch_and_save_dart_filings_for_corp
+        from ..db import SessionLocal
+        try:
+            count = fetch_and_save_dart_filings_for_corp(corp_code, days=1095)
+            with SessionLocal() as task_db:
+                task_db.execute(
+                    text("""
+                        UPDATE ingest_run_log
+                        SET status = 'SUCCESS', row_count = :cnt, finished_at = NOW()
+                        WHERE run_id = :run_id
+                    """),
+                    {"cnt": count, "run_id": run_id},
+                )
+                task_db.commit()
+        except Exception as exc:
+            with SessionLocal() as task_db:
+                task_db.execute(
+                    text("""
+                        UPDATE ingest_run_log
+                        SET status = 'FAILED', message = :msg, finished_at = NOW()
+                        WHERE run_id = :run_id
+                    """),
+                    {"msg": str(exc)[:500], "run_id": run_id},
+                )
+                task_db.commit()
+
+    background_tasks.add_task(run_task)
+    return {"status": "accepted", "job_id": job_id, "company_id": company_id, "company_name": name_ko}
+
+
+@router.get("/reports/dart-backfill/status")
+def get_dart_backfill_status(company_id: int, db: Session = Depends(get_db)):
+    row = db.execute(
+        text("SELECT corp_code FROM company WHERE company_id = :cid"),
+        {"cid": company_id},
+    ).fetchone()
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="corp_code not found for company")
+
+    corp_code = row[0]
+    job_id = f"dart_backfill:{corp_code}"
+    _ensure_ingest_run_log(db)
+    last_run = db.execute(
+        text("""
+            SELECT status, started_at, finished_at, message, row_count
+            FROM ingest_run_log
+            WHERE job_id = :job_id
+            ORDER BY started_at DESC
+            LIMIT 1
+        """),
+        {"job_id": job_id},
+    ).fetchone()
+    if not last_run:
+        return {"status": "IDLE", "job_id": job_id}
+
+    status, started_at, finished_at, message, row_count = last_run
+    return {
+        "status": status,
+        "job_id": job_id,
+        "started_at": started_at.isoformat() if started_at else None,
+        "finished_at": finished_at.isoformat() if finished_at else None,
+        "message": message,
+        "row_count": row_count,
     }

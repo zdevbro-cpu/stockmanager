@@ -14,7 +14,7 @@ from docx.shared import Pt, RGBColor, Inches
 # Import settings to get API key
 from ..config import settings
 
-def fetch_google_news(query: str, limit: int = 7) -> str:
+def fetch_google_news(query: str, limit: int | None = None) -> str:
     """Fetch recent news from Google News RSS"""
     try:
         encoded_query = urllib.parse.quote(query)
@@ -28,7 +28,12 @@ def fetch_google_news(query: str, limit: int = 7) -> str:
         items = root.findall('.//item')
         
         news_list = []
-        for i, item in enumerate(items[:limit]):
+        if limit is None:
+            target_items = items
+        else:
+            target_items = items[:limit]
+
+        for item in target_items:
             title = item.find('title').text if item.find('title') is not None else "No Title"
             pub_date = item.find('pubDate').text if item.find('pubDate') is not None else ""
             news_list.append(f"- {title} ({pub_date})")
@@ -70,7 +75,7 @@ def generate_ai_report(company_id: int, report_id: int):
         print(f"Starting MODULAR report generation for {name}...")
         
         # 2. Fetch News (Increase limit)
-        news_summary = fetch_google_news(name, limit=30) 
+        news_summary = fetch_google_news(name, limit=None) 
         today_str = datetime.date.today().strftime("%Y년 %m월 %d일")
         
         # 3. Setup AI

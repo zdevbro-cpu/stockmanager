@@ -198,15 +198,51 @@ def get_recommendations(
     asof = dt_date.fromisoformat(as_of_date) if as_of_date else None
     where_clauses = []
     params: dict[str, object] = {}
+    effective_asof: dt_date | None = None
     if asof:
+        # If the exact date has no rows, fall back to latest date <= requested.
+        latest_where = ["as_of_date <= :as_of_date"]
+        latest_params: dict[str, object] = {"as_of_date": asof}
+        if strategy_id:
+            latest_where.append("strategy_id = :strategy_id")
+            latest_params["strategy_id"] = strategy_id
+        if strategy_version:
+            latest_where.append("strategy_version = :strategy_version")
+            latest_params["strategy_version"] = strategy_version
+        latest_sql = "SELECT MAX(as_of_date) FROM recommendation WHERE " + " AND ".join(latest_where)
+        latest_date = db.execute(text(latest_sql), latest_params).scalar()
+        if latest_date:
+            params["as_of_date"] = latest_date
+            effective_asof = latest_date
+        else:
+            params["as_of_date"] = asof
+            effective_asof = asof
         where_clauses.append("r.as_of_date = :as_of_date")
-        params["as_of_date"] = asof
     if strategy_id:
         where_clauses.append("r.strategy_id = :strategy_id")
         params["strategy_id"] = strategy_id
     if strategy_version:
         where_clauses.append("r.strategy_version = :strategy_version")
         params["strategy_version"] = strategy_version
+
+    # If no date is provided, fall back to the latest available date for the strategy filters.
+    if asof is None:
+        latest_where = []
+        latest_params: dict[str, object] = {}
+        if strategy_id:
+            latest_where.append("strategy_id = :strategy_id")
+            latest_params["strategy_id"] = strategy_id
+        if strategy_version:
+            latest_where.append("strategy_version = :strategy_version")
+            latest_params["strategy_version"] = strategy_version
+        latest_sql = "SELECT MAX(as_of_date) FROM recommendation"
+        if latest_where:
+            latest_sql += " WHERE " + " AND ".join(latest_where)
+        latest_date = db.execute(text(latest_sql), latest_params).scalar()
+        if latest_date:
+            where_clauses.append("r.as_of_date = :as_of_date")
+            params["as_of_date"] = latest_date
+            effective_asof = latest_date
 
     where_sql = ""
     if where_clauses:
@@ -315,7 +351,11 @@ def get_recommendations(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Target range compute failed: {exc}")
 
-    return {"items": items}
+    return {
+        "items": items,
+        "as_of_date": effective_asof.isoformat() if effective_asof else None,
+        "requested_as_of_date": asof.isoformat() if asof else None,
+    }
 
 
 @router.post("/recommendations/trigger")
@@ -369,7 +409,6 @@ def trigger_recommendations(
     }
     if selected:
         params_kwargs.update({
-            "top_n": int(selected.params.get("top_n_default", payload.top_n)),
             "min_price_krw": float(selected.params.get("min_price_krw", 2000)),
             "min_avg_turnover_krw_20d": float(selected.params.get("min_avg_turnover_krw_20d", 5e10)),
             "max_weight_per_name": float(selected.params.get("max_weight_per_name", 0.20)),
@@ -379,6 +418,15 @@ def trigger_recommendations(
     if payload.params_override:
         params_kwargs.update(payload.params_override)
     params = StrategyParams(**params_kwargs)
+    os.makedirs(os.path.dirname(RUN_STATUS_PATH), exist_ok=True)
+    with open(RUN_STATUS_PATH, "w", encoding="utf-8") as f:
+        json.dump({
+            "status": "RUNNING",
+            "as_of_date": as_of.isoformat(),
+            "strategy_id": payload.strategy_id,
+            "strategy_version": payload.strategy_version,
+            "top_n": payload.top_n,
+        }, f, ensure_ascii=True, indent=2)
     def run_with_status():
         try:
             run_daily_close(as_of, params)
