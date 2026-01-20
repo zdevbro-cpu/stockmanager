@@ -2,9 +2,37 @@ import requests
 from sqlalchemy import text
 from ingest.config import settings
 from ingest.db import SessionLocal
-from datetime import date
+from datetime import date, datetime
+import time
+from ingest.dart_corp_sync import sync_dart_corp_codes
 
-def fetch_and_save_company_financials(limit_companies: int = 10):
+
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+def _get_dart_session():
+    session = requests.Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=1,
+        status_forcelist=[500, 502, 503, 504],
+        allowed_methods=["GET", "POST"]
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
+
+def _parse_dart_date(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    cleaned = value.replace(".", "").replace("-", "").strip()
+    if len(cleaned) != 8:
+        return None
+    try:
+        return datetime(int(cleaned[:4]), int(cleaned[4:6]), int(cleaned[6:8]))
+    except ValueError:
+        return None
+
+def fetch_and_save_company_financials(limit_companies: int | None = None, progress_cb=None):
     """
     Fetch major financial indicators (Revenue, Operating Profit, etc.) 
     for companies from OpenDART and save to 'financial_statement' table.
@@ -20,8 +48,22 @@ def fetch_and_save_company_financials(limit_companies: int = 10):
     with SessionLocal() as db:
         try:
             # 1. Get companies with corp_code
-            stmt = text("SELECT corp_code, name_ko FROM company WHERE corp_code IS NOT NULL LIMIT :l")
-            companies = db.execute(stmt, {"l": limit_companies}).fetchall()
+            if limit_companies is None:
+                stmt = text("SELECT corp_code, name_ko FROM company WHERE corp_code IS NOT NULL")
+                companies = db.execute(stmt).fetchall()
+            else:
+                stmt = text("SELECT corp_code, name_ko FROM company WHERE corp_code IS NOT NULL LIMIT :l")
+                companies = db.execute(stmt, {"l": limit_companies}).fetchall()
+            if not companies:
+                print("No corp_code found. Syncing corp_codes from DART...", flush=True)
+                sync_dart_corp_codes()
+                if limit_companies is None:
+                    companies = db.execute(stmt).fetchall()
+                else:
+                    companies = db.execute(stmt, {"l": limit_companies}).fetchall()
+                if not companies:
+                    print("No corp_code available after sync. Aborting.", flush=True)
+                    return
             
             # Reprt codes: 11011(Annual), 11012(Half), 11013(Q1), 11014(Q3)
             # For now, let's fetch 2023 Annual Report (11011) as a base.
@@ -29,6 +71,10 @@ def fetch_and_save_company_financials(limit_companies: int = 10):
             reprt_code = "11011"
             
             count = 0
+            total = len(companies)
+            if progress_cb:
+                progress_cb(0, total)
+            session = _get_dart_session()
             for corp_code, name in companies:
                 print(f"Fetching financials for {name} ({corp_code})...", flush=True)
                 
@@ -40,7 +86,12 @@ def fetch_and_save_company_financials(limit_companies: int = 10):
                     "reprt_code": reprt_code
                 }
                 
-                resp = requests.get(url, params=params, timeout=10)
+                try:
+                    resp = session.get(url, params=params, timeout=30)
+                except requests.exceptions.RequestException as re:
+                     print(f"Skipping {name}: Request Failed {re}", flush=True)
+                     time.sleep(0.5)
+                     continue
                 data = resp.json()
                 
                 if resp.status_code == 200 and data.get("status") == "000":
@@ -56,11 +107,15 @@ def fetch_and_save_company_financials(limit_companies: int = 10):
                             
                         # fs_div: CFS (Consolidated), OFS (Separate)
                         is_consolidated = (item.get('fs_div') == 'CFS')
+                        announced_at = (
+                            _parse_dart_date(item.get("rcept_dt"))
+                            or _parse_dart_date(item.get("thstrm_dt"))
+                        )
                         
                         stmt_upsert = text("""
                             INSERT INTO financial_statement 
                             (corp_code, period_end, announced_at, item_code, item_name, value, unit, consolidated_flag, created_at)
-                            VALUES (:cc, :pe, NOW(), :icode, :iname, :v, :u, :cf, NOW())
+                            VALUES (:cc, :pe, :ann, :icode, :iname, :v, :u, :cf, NOW())
                             ON CONFLICT (corp_code, period_end, item_code, announced_at) 
                             DO UPDATE SET value = EXCLUDED.value, item_name = EXCLUDED.item_name
                         """)
@@ -71,6 +126,7 @@ def fetch_and_save_company_financials(limit_companies: int = 10):
                         db.execute(stmt_upsert, {
                             "cc": corp_code,
                             "pe": p_end,
+                            "ann": announced_at or datetime.combine(p_end, datetime.min.time()),
                             "icode": item.get('account_id', item.get('account_nm')),
                             "iname": item.get('account_nm'),
                             "v": val,
@@ -83,6 +139,10 @@ def fetch_and_save_company_financials(limit_companies: int = 10):
                     print(f"Saved financials for {name}", flush=True)
                 else:
                     print(f"Skipping {name}: {data.get('message')}", flush=True)
+                if progress_cb:
+                    progress_cb(count, total)
+                
+                time.sleep(0.2)
                 
             print(f"Finished. Processed {count} companies.", flush=True)
             

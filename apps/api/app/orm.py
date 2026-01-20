@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import (
-    String, Integer, Float, Date, DateTime, Boolean, ForeignKey, UniqueConstraint, Index, JSON
+    String, Integer, Float, Date, DateTime, Boolean, ForeignKey, UniqueConstraint, Index, JSON, Enum
 )
 
 
@@ -109,10 +109,20 @@ class TimingSignalRow(Base):
     ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True, index=True)
     ticker: Mapped[str] = mapped_column(String(12), ForeignKey("security.ticker", ondelete="CASCADE"), primary_key=True, index=True)
     horizon: Mapped[str] = mapped_column(String(10), primary_key=True)
-    signal: Mapped[str] = mapped_column(String(10))
+    signal: Mapped[str] = mapped_column(Enum("BUY", "WAIT", "REDUCE", "SELL", name="signal_type"))
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     triggers: Mapped[list | None] = mapped_column(JSON, nullable=True)
     risk_flags: Mapped[list | None] = mapped_column(JSON, nullable=True)
     model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     __table_args__ = (Index("idx_signal_lookup", "ticker", "horizon", "ts"),)
+
+
+class SignalConfigRow(Base):
+    __tablename__ = "signal_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    engine: Mapped[str] = mapped_column(String(50), nullable=False)
+    horizons: Mapped[dict] = mapped_column(JSON, nullable=False)
+    weights: Mapped[dict] = mapped_column(JSON, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)

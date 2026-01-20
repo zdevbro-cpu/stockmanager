@@ -13,7 +13,7 @@ db-seed:
 	PYTHONPATH=. python scripts/seed_sample_data.py
 
 api-run:
-	cd apps/api && uvicorn app.main:app --reload
+	cd apps/api && uvicorn app.main:app --reload --port 8010
 
 api-test:
 	cd apps/api && pytest -q

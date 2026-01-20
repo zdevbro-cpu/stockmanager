@@ -41,7 +41,7 @@ Codex는 `apps/web`를 새로 만들고, 루트에 실행 스크립트/문서도
 
 ## 3) API 엔드포인트 (현재 골격 기준 — 반드시 연결)
 백엔드가 로컬에서 실행 중일 때(기본):
-- Base URL: `http://localhost:8000` (백엔드 포트가 다르면 `.env`로 변경 가능)
+- Base URL: `http://localhost:8010` (백엔드 포트가 다르면 `.env`로 변경 가능)
 
 필수 사용(최소 연결):
 1. `GET /health`
@@ -224,7 +224,7 @@ Codex는 `apps/web`를 새로 만들고, 루트에 실행 스크립트/문서도
 - 비상장도 포함: Company 선택 단계에서 “listed/unlisted” 토글 필수
 
 ### 8.7 Settings (`/settings`)
-- API Base URL 설정(기본 http://localhost:8000)
+- API Base URL 설정(기본 http://localhost:8010)
 - 데모 모드 토글(오프라인: fixture JSON으로 화면 렌더) — **필수 구현**
   - 백엔드가 꺼져 있어도 UI 데모 가능해야 합니다.
 

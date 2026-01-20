@@ -3,7 +3,7 @@ from sqlalchemy import text
 from ingest.db import get_db
 import hashlib
 
-def fetch_and_save_krx_list():
+def fetch_and_save_krx_list(progress_cb=None):
     db = next(get_db())
     print("Fetching KRX stock list via FinanceDataReader...")
     
@@ -14,6 +14,9 @@ def fetch_and_save_krx_list():
             df_krx = df_krx[df_krx['Market'].isin(['KOSPI', 'KOSDAQ'])]
         
         count = 0
+        total = len(df_krx)
+        if progress_cb:
+            progress_cb(0, total)
         for _, row in df_krx.iterrows():
             ticker = str(row['Code'])
             name = row['Name']
@@ -50,11 +53,15 @@ def fetch_and_save_krx_list():
             """)
             db.execute(stmt_security, {"t": ticker, "cid": company_id, "m": market})
             count += 1
+            if progress_cb and count % 50 == 0:
+                progress_cb(count, total)
             
             if count % 200 == 0:
                 print(f"Processed {count} stocks...")
         
         db.commit()
+        if progress_cb:
+            progress_cb(count, total)
         print(f"Successfully loaded {count} KRX stocks.")
         
     except Exception as e:

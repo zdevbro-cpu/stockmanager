@@ -36,6 +36,7 @@ make worker-daily-close
 ```bash
 make api-run
 ```
+API default port: 8010
 
 ### 8) Web 실행
 ```bash

@@ -4,13 +4,14 @@ from sqlalchemy import text
 from ingest.db import SessionLocal
 from ingest.kis_client import KisClient
 
-def update_kis_prices_task(limit: int | None = 50, offset: int = 0, kis: KisClient | None = None):
+def update_kis_prices_task(limit: int | None = None, offset: int = 0, kis: KisClient | None = None, progress_cb=None):
     """
     Fetch current prices for companies from KIS API and update 'price_daily' table.
     Commits every 10 items to ensure progress visibility.
     """
     kis = kis or KisClient()
-    print(f"Starting KIS Price Update Task (Limit: {limit})...")
+    limit_label = "ALL" if limit is None else str(limit)
+    print(f"Starting KIS Price Update Task (Limit: {limit_label})...")
     
     with SessionLocal() as db:
         try:
@@ -32,6 +33,9 @@ def update_kis_prices_task(limit: int | None = 50, offset: int = 0, kis: KisClie
                 stocks = db.execute(stmt_get_stocks).fetchall()
             else:
                 stocks = db.execute(stmt_get_stocks, {"l": limit, "o": offset}).fetchall()
+            total = len(stocks)
+            if progress_cb:
+                progress_cb(0, total)
             today = date.today()
             
             count = 0
@@ -63,6 +67,8 @@ def update_kis_prices_task(limit: int | None = 50, offset: int = 0, kis: KisClie
                         # Commit every 5 items for better progress visibility
                         if count % 5 == 0:
                             db.commit()
+                        if progress_cb:
+                            progress_cb(count, total)
                             
                     except Exception as e:
                         print(f"Error for {ticker}: {e}")
@@ -187,6 +193,8 @@ def backfill_kis_prices_task(
                 time.sleep(0.2)
 
             db.commit()
+            if progress_cb:
+                progress_cb(count, total)
             print(f"Backfill complete. Total rows upserted: {total_rows}")
         except Exception as e:
             print(f"KIS Backfill CRITICAL Failed: {e}")
