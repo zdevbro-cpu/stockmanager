@@ -52,15 +52,29 @@ function Start-ConsoleProcess {
 
 try {
     Write-Host "Environment check..."
-    Require-Command "docker"
     Require-Command "npm"
     Require-Command $pythonExe
 
-    Write-Host "Docker status..."
-    Invoke-Checked -Command "docker info >nul 2>nul" -WorkDir $root
+    $hasDocker = $false
+    try {
+        Require-Command "docker"
+        $hasDocker = $true
+    } catch {
+        $hasDocker = $false
+    }
 
-    Write-Host "Starting docker compose..."
-    Invoke-Checked -Command "docker compose up -d" -WorkDir $root
+    if ($hasDocker) {
+        Write-Host "Docker status..."
+        try {
+            Invoke-Checked -Command "docker info >nul 2>nul" -WorkDir $root
+            Write-Host "Starting docker compose..."
+            Invoke-Checked -Command "docker compose up -d" -WorkDir $root
+        } catch {
+            Write-Host "Docker unavailable. Skipping docker compose."
+        }
+    } else {
+        Write-Host "Docker not found. Skipping docker compose."
+    }
 
     Write-Host "Starting API server..."
     Start-ConsoleProcess -Command "$pythonExe -m uvicorn app.main:app --reload --port 8010" -WorkDir $apiDir -Title "stockmanager-api"
