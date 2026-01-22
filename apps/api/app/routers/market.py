@@ -345,6 +345,17 @@ def _build_breadth_response(snapshot: dict) -> dict:
     }
 
 
+def _has_program_values(snapshot: dict | None) -> bool:
+    if not snapshot:
+        return False
+    keys = ("program_net_krw", "arbitrage_net_krw", "non_arbitrage_net_krw")
+    for key in keys:
+        value = snapshot.get(key)
+        if value not in (None, "", "-"):
+            return True
+    return False
+
+
 def _refresh_breadth_snapshot() -> None:
     global _BREADTH_CACHE, _BREADTH_CACHE_AT, _BREADTH_REFRESHING
     if _BREADTH_REFRESHING:
@@ -646,6 +657,8 @@ def get_market_breadth(
 
     now = time.time()
     if _BREADTH_CACHE and _BREADTH_CACHE_AT and (now - _BREADTH_CACHE_AT) < 3600:
+        if not _has_program_values(_BREADTH_CACHE):
+            background_tasks.add_task(_refresh_breadth_snapshot)
         return _build_breadth_response(_BREADTH_CACHE)
 
     snapshot_row = db.execute(text("""
@@ -667,7 +680,9 @@ def get_market_breadth(
         }
         _BREADTH_CACHE = snapshot
         _BREADTH_CACHE_AT = time.time()
-        if not snapshot_row.updated_at or (now - snapshot_row.updated_at.timestamp()) >= 3600:
+        if (not snapshot_row.updated_at
+                or (now - snapshot_row.updated_at.timestamp()) >= 3600
+                or not _has_program_values(snapshot)):
             background_tasks.add_task(_refresh_breadth_snapshot)
         return _build_breadth_response(snapshot)
 
