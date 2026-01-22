@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRecommendations, useRecommendationRunStatus, useStrategies } from '../hooks/useStockData';
 import ExplainDrawer from '../components/ExplainDrawer';
@@ -148,6 +148,13 @@ export default function Recommendations() {
         const cleaned = value.replace(/,/g, '');
         const parsed = Number(cleaned);
         return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const formatPrice = (value: number | string | null | undefined) => {
+        if (value === null || value === undefined || value === '') return '-';
+        const num = typeof value === 'number' ? value : Number(String(value).replace(/,/g, ''));
+        if (Number.isNaN(num)) return '-';
+        return num.toLocaleString('en-US');
     };
 
     const escapeCsv = (value: unknown) => {
@@ -418,6 +425,7 @@ export default function Recommendations() {
                 </div>
             )}
             <div className="flex flex-col gap-1 text-xs text-text-subtle">
+                <span>Weight = 추천 포트폴리오 내 목표 비중(합계 100%)</span>
                 <span>추천 결과: {displayRows.length}건</span>
                 {runStatus?.status && (
                     <span>
@@ -431,12 +439,12 @@ export default function Recommendations() {
                 {topN > rows.length && (
                     <span>
                         요청한 추천 개수({topN})보다 현재 데이터가 적습니다({rows.length}).
-                        더 늘리려면 Run Worker 실행이 필요합니다.
+                        필요하면 Run Worker 실행이 필요합니다.
                     </span>
                 )}
                 {requestedDate && effectiveDate && requestedDate !== effectiveDate && (
                     <span>
-                        뫄택일 데이터 없음. 최신 추천일: {effectiveDate}
+                        해당 데이터 없음. 최신 추천일: {effectiveDate}
                         <button
                             onClick={() => {
                                 setAsOfDate(effectiveDate);
@@ -565,7 +573,7 @@ export default function Recommendations() {
                             onClick={handleCreateStrategy}
                             className="px-3 py-2 rounded bg-primary text-white text-xs font-bold"
                         >
-                            전략 저장
+                            ?꾨왂 ???
                         </button>
                         {createError && <span className="text-red-400">{createError}</span>}
                     </div>
@@ -581,26 +589,27 @@ export default function Recommendations() {
                                 <th className="px-6 py-4 text-left font-bold w-16">Rank</th>
                                 <th className="px-6 py-4 text-left font-bold">종목 (Ticker)</th>
                                 <th className="px-6 py-4 text-center font-bold">Signal</th>
+                                <th className="px-6 py-4 text-right font-bold">현재가</th>
                                 <th
                                     className="px-6 py-4 text-right font-bold"
-                                    title="추천 포트폴리오 내 목표 비중 (target weight)"
+                                    title="추천 포트폴리오 내 목표 비중(합계 100%)"
                                 >
-                                    Weight
+                                    Weight(목표비중)
                                 </th>
                                 <th
                                     className="px-6 py-4 text-right font-bold"
-                                    title="score = 0.6*z(ret_20) + 0.4*z(ret_5) - 0.2*z(vol_20); 표시는 0-100 정규화"
+                                    title="score = 0.6*z(ret_20) + 0.4*z(ret_5) - 0.2*z(vol_20); scale 0-100"
                                 >
                                     Score
                                 </th>
                                 <th className="px-6 py-4 text-right font-bold">Target Range</th>
-                                <th className="px-6 py-4 text-right font-bold">Action</th>
+                                <th className="px-6 py-4 text-right font-bold">추천정보</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border-dark">
                             {displayRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-text-subtle">
+                                    <td colSpan={8} className="px-6 py-8 text-center text-text-subtle">
                                         {isRecommendationsFetching
                                             ? 'Loading recommendations...'
                                             : 'No recommendations yet. Run recommendations to generate results.'}
@@ -629,6 +638,9 @@ export default function Recommendations() {
                                             {getSignal(item)}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-4 text-right text-sm text-white">
+                                        {formatPrice(item.current_price ?? item.price ?? item.last_price_krw)}
+                                    </td>
                                     <td className="px-6 py-4 text-right text-lg font-display font-bold text-white">{formatWeight(item.weight ?? item.target_weight)}</td>
                                     <td
                                         className="px-6 py-4 text-right font-bold text-white"
@@ -644,7 +656,7 @@ export default function Recommendations() {
                                             onClick={() => setSelectedItem(item)}
                                             className="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg text-xs font-bold transition-colors"
                                         >
-                                            추천근거
+                                            추천정보
                                         </button>
                                     </td>
                                 </tr>
@@ -663,3 +675,4 @@ export default function Recommendations() {
         </div>
     );
 }
+

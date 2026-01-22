@@ -102,6 +102,19 @@ def _compute_target_range(series: list[tuple], roe: float | None, debt_ratio: fl
         "factor": round(factor, 2),
     }
 
+
+def _build_price_series(series: list[tuple]) -> list[dict[str, object]]:
+    if not series:
+        return []
+    series_sorted = sorted(series, key=lambda x: x[0])
+    items: list[dict[str, object]] = []
+    for trade_date, _open, _high, _low, close in series_sorted:
+        close_val = _to_float(close)
+        if close_val is None:
+            continue
+        items.append({"date": trade_date.isoformat(), "close": close_val})
+    return items
+
 class RecommendationTrigger(BaseModel):
     as_of_date: str | None = None
     strategy_id: str = "prod_v1"
@@ -331,7 +344,10 @@ def get_recommendations(
                 roe_raw, debt_raw = ratio_map[r.company_id]
                 roe = _to_float(roe_raw)
                 debt_ratio = _to_float(debt_raw)
-            low, high, basis = _compute_target_range(price_map.get(r.ticker, []), roe, debt_ratio)
+            series = price_map.get(r.ticker, [])
+            low, high, basis = _compute_target_range(series, roe, debt_ratio)
+            price_series = _build_price_series(series)
+            current_price = price_series[-1]["close"] if price_series else None
             items.append(
                 {
                     "as_of_date": r.as_of_date.isoformat(),
@@ -343,6 +359,8 @@ def get_recommendations(
                     "score": r.score,
                     "target_weight": r.target_weight,
                     "rationale": r.rationale,
+                    "current_price": current_price,
+                    "price_series": price_series,
                     "target_price_low": low,
                     "target_price_high": high,
                     "target_price_basis": basis,

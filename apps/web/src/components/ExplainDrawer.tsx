@@ -33,14 +33,54 @@ export default function ExplainDrawer({ isOpen, onClose, data }: ExplainDrawerPr
     const displayName = safeData.name ?? safeData.name_ko ?? '-';
     const rationale = safeData.rationale ?? null;
     const formattedScore = typeof safeData.score === 'number' ? safeData.score.toFixed(3) : safeData.score ?? '-';
-    const formatNumber = (value?: number | null) => {
-        if (value === null || value === undefined) return '-';
-        return Number(value).toLocaleString('en-US');
+    const formatNumber = (value?: number | string | null) => {
+        if (value === null || value === undefined || value === '') return '-';
+        const num = typeof value === 'number' ? value : Number(String(value).replace(/,/g, ''));
+        if (Number.isNaN(num)) return '-';
+        return num.toLocaleString('en-US');
     };
     const targetRange = safeData.target_price_low && safeData.target_price_high
         ? `${formatNumber(safeData.target_price_low)} ~ ${formatNumber(safeData.target_price_high)}`
         : '-';
     const targetBasis = safeData.target_price_basis?.basis ?? null;
+    const priceSeries = useMemo(() => {
+        const rawSeries = safeData.price_series;
+        if (!Array.isArray(rawSeries)) return [];
+        return rawSeries
+            .map((row: any) => {
+                const date = row.date ?? row.trade_date;
+                const closeValue = typeof row.close === 'number' ? row.close : Number(row.close);
+                if (!date || Number.isNaN(closeValue)) return null;
+                return { date: String(date).slice(0, 10), close: closeValue };
+            })
+            .filter(Boolean)
+            .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, [safeData.price_series]);
+    const currentPrice = useMemo(() => {
+        if (priceSeries.length) {
+            return priceSeries[priceSeries.length - 1].close;
+        }
+        const fallback = safeData.current_price ?? safeData.price ?? safeData.last_price_krw;
+        const fallbackNum = typeof fallback === 'number' ? fallback : Number(String(fallback ?? '').replace(/,/g, ''));
+        return Number.isNaN(fallbackNum) ? null : fallbackNum;
+    }, [priceSeries, safeData.current_price, safeData.price, safeData.last_price_krw]);
+    const chartData = useMemo(() => {
+        if (!priceSeries.length) return null;
+        const width = 240;
+        const height = 80;
+        const pad = 6;
+        const values = priceSeries.map((point) => point.close);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min || 1;
+        const points = priceSeries.map((point, index) => {
+            const ratio = priceSeries.length === 1 ? 0 : index / (priceSeries.length - 1);
+            const x = pad + ratio * (width - pad * 2);
+            const y = pad + (1 - (point.close - min) / range) * (height - pad * 2);
+            return { x, y };
+        });
+        return { width, height, points };
+    }, [priceSeries]);
     const alreadyAdded = useMemo(() => {
         return !!safeData.ticker && watchlist.some(item => item.ticker === safeData.ticker);
     }, [watchlist, safeData.ticker]);
@@ -94,7 +134,7 @@ export default function ExplainDrawer({ isOpen, onClose, data }: ExplainDrawerPr
                     {/* Summary Section */}
                     <div className="bg-card-dark rounded-xl p-4 border border-border-dark">
                         <h3 className="text-sm font-bold text-text-subtle mb-3 uppercase tracking-wider">Analysis Summary</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div>
                                 <p className="text-xs text-gray-400">Total Score</p>
                                 <p className="text-2xl font-bold text-primary">{formattedScore}</p>
@@ -102,6 +142,10 @@ export default function ExplainDrawer({ isOpen, onClose, data }: ExplainDrawerPr
                             <div>
                                 <p className="text-xs text-gray-400">Target Weight</p>
                                 <p className="text-2xl font-bold text-white">{formattedWeight}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-400">현재가</p>
+                                <p className="text-2xl font-bold text-white">{formatNumber(currentPrice ?? null)}</p>
                             </div>
                         </div>
                         <div className="mt-4">
@@ -111,6 +155,39 @@ export default function ExplainDrawer({ isOpen, onClose, data }: ExplainDrawerPr
                                 <p className="text-[11px] text-text-subtle mt-1">Basis: {targetBasis}</p>
                             )}
                         </div>
+                    </div>
+
+                    {/* Price Trend */}
+                    <div className="bg-card-dark rounded-xl p-4 border border-border-dark">
+                        <h3 className="text-sm font-bold text-text-subtle mb-3 uppercase tracking-wider">가격 추이</h3>
+                        {chartData ? (
+                            <div className="space-y-2">
+                                <svg
+                                    viewBox={`0 0 ${chartData.width} ${chartData.height}`}
+                                    className="w-full h-24"
+                                    preserveAspectRatio="none"
+                                >
+                                    <polyline
+                                        points={chartData.points.map((point) => `${point.x},${point.y}`).join(' ')}
+                                        fill="none"
+                                        stroke="#38bdf8"
+                                        strokeWidth="2"
+                                    />
+                                    <circle
+                                        cx={chartData.points[chartData.points.length - 1].x}
+                                        cy={chartData.points[chartData.points.length - 1].y}
+                                        r="2.5"
+                                        fill="#38bdf8"
+                                    />
+                                </svg>
+                                <div className="flex justify-between text-[11px] text-text-subtle">
+                                    <span>{priceSeries[0]?.date}</span>
+                                    <span>{priceSeries[priceSeries.length - 1]?.date}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-sm text-text-subtle">가격 데이터 없음.</div>
+                        )}
                     </div>
 
                     {/* Contributing Factors */}

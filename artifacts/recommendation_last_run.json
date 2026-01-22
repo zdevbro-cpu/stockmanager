@@ -3,10 +3,10 @@
   "strategy_id": "prod_v1",
   "strategy_version": "1.0",
   "universe_total": 2788,
-  "after_min_price": 2295,
-  "after_min_turnover": 199,
-  "after_indicators": 199,
-  "final_top_n": 50,
+  "after_min_price": 2549,
+  "after_min_turnover": 237,
+  "after_indicators": 237,
+  "final_top_n": 5,
   "fallback_used": false,
   "status": "SUCCESS"
 }
