@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-Write-Host "run_local.ps1 실행 시작"
+Write-Host "run_local.ps1 start"
 
 $root = Split-Path -Parent $PSScriptRoot
 $apiDir = Join-Path $root "apps\\api"
@@ -10,9 +10,12 @@ $pythonExe = if (Test-Path $apiVenvPython) { $apiVenvPython } else { "python" }
 
 function Require-Command {
     param([string]$Name)
+    if (Test-Path $Name) {
+        return
+    }
     $cmd = Get-Command $Name -ErrorAction SilentlyContinue
     if (-not $cmd) {
-        throw "필수 명령을 찾을 수 없습니다: $Name"
+        throw "Missing command: $Name"
     }
 }
 
@@ -25,7 +28,7 @@ function Invoke-Checked {
     try {
         & cmd /c $Command
         if ($LASTEXITCODE -ne 0) {
-            throw "명령 실패($LASTEXITCODE): $Command"
+            throw "Command failed ($LASTEXITCODE): $Command"
         }
     } finally {
         Pop-Location
@@ -48,12 +51,12 @@ function Start-ConsoleProcess {
 }
 
 try {
-    Write-Host "환경 체크..."
+    Write-Host "Environment check..."
     Require-Command "docker"
     Require-Command "npm"
     Require-Command $pythonExe
 
-    Write-Host "Docker 상태 확인..."
+    Write-Host "Docker status..."
     Invoke-Checked -Command "docker info >nul 2>nul" -WorkDir $root
 
     Write-Host "Starting docker compose..."
@@ -67,6 +70,6 @@ try {
 
     Write-Host "Done. Close the opened windows to stop API/Web."
 } catch {
-    Write-Host "실패: $($_.Exception.Message)"
+    Write-Host "Failed: $($_.Exception.Message)"
     exit 1
 }
