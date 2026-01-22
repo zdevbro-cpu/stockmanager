@@ -372,6 +372,17 @@ def _refresh_breadth_snapshot() -> None:
     finally:
         db.close()
         _BREADTH_REFRESHING = False
+
+
+def _try_refresh_breadth_now(db: Session) -> dict | None:
+    snapshot, _, _ = _compute_market_breadth(db, debug=False)
+    if snapshot:
+        _save_breadth_snapshot(db, snapshot)
+        global _BREADTH_CACHE, _BREADTH_CACHE_AT
+        _BREADTH_CACHE = snapshot
+        _BREADTH_CACHE_AT = time.time()
+        return _build_breadth_response(snapshot)
+    return None
 # ... (indices code remains same) ...
 
 # ... (investor trends code remains same) ...
@@ -658,6 +669,9 @@ def get_market_breadth(
     now = time.time()
     if _BREADTH_CACHE and _BREADTH_CACHE_AT and (now - _BREADTH_CACHE_AT) < 3600:
         if not _has_program_values(_BREADTH_CACHE):
+            refreshed = _try_refresh_breadth_now(db)
+            if refreshed:
+                return refreshed
             background_tasks.add_task(_refresh_breadth_snapshot)
         return _build_breadth_response(_BREADTH_CACHE)
 
@@ -680,18 +694,19 @@ def get_market_breadth(
         }
         _BREADTH_CACHE = snapshot
         _BREADTH_CACHE_AT = time.time()
+        if not _has_program_values(snapshot):
+            refreshed = _try_refresh_breadth_now(db)
+            if refreshed:
+                return refreshed
         if (not snapshot_row.updated_at
                 or (now - snapshot_row.updated_at.timestamp()) >= 3600
                 or not _has_program_values(snapshot)):
             background_tasks.add_task(_refresh_breadth_snapshot)
         return _build_breadth_response(snapshot)
 
-    snapshot, _, _ = _compute_market_breadth(db, debug=False)
-    if snapshot:
-        _save_breadth_snapshot(db, snapshot)
-        _BREADTH_CACHE = snapshot
-        _BREADTH_CACHE_AT = time.time()
-        return _build_breadth_response(snapshot)
+    refreshed = _try_refresh_breadth_now(db)
+    if refreshed:
+        return refreshed
 
     return {
         "as_of_date": None,
