@@ -1,6 +1,10 @@
 import argparse
 from datetime import date, datetime, timedelta
 import time
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "services", "ingest"))
 
 from sqlalchemy import text
 
@@ -83,6 +87,8 @@ def _backfill_date(target_date: date, dry_run: bool = False) -> int:
             if not dry_run and idx % 20 == 0:
                 db.commit()
             time.sleep(0.1)
+            if idx % 100 == 0:
+                print(f"Backfill progress: {idx}/{len(tickers)} tickers")
         if not dry_run:
             db.commit()
     return total_rows
