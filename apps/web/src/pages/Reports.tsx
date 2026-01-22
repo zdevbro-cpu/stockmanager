@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
@@ -183,11 +183,11 @@ export default function Reports() {
 
     const handleCreateReport = async () => {
         if (!targetCompanyId) {
-            alert('Delete failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+            alert('기업을 먼저 선택해 주세요.');
             return;
         }
         setIsGenerating(true);
-        setGenerationStatus('由ы룷???앹꽦 ?붿껌??蹂대궡??以?..');
+        setGenerationStatus('리포트 생성을 준비 중입니다...');
         try {
             const client = createApiClient(apiBaseUrl);
             const startResp = await client.post('/reports', {
@@ -198,7 +198,7 @@ export default function Reports() {
             });
 
             const newReportId = startResp.data.report_id;
-            setGenerationStatus('AI 遺꾩꽍 諛?DART ?곗씠???섏쭛 以?.. (??20~40珥??뚯슂)');
+            setGenerationStatus('재무/공시/뉴스 수집 중입니다. (약 20~40초 소요)');
 
             // Polling for status
             let isDone = false;
@@ -213,27 +213,27 @@ export default function Reports() {
                     const statusResp = await client.get(`/reports/${newReportId}`);
                     if (statusResp.data.status === 'DONE') {
                         isDone = true;
-                        setGenerationStatus('遺꾩꽍 ?꾨즺! 由ы룷?몃? 遺덈윭?ㅻ뒗 以?..');
+                        setGenerationStatus('리포트 생성 완료! 보고서를 여는 중입니다...');
                         await fetchReportDetail(newReportId);
                         fetchReports();
                     } else {
                         // Update status every 2 seconds so user knows it's alive
-                        setGenerationStatus(`?ъ링 遺꾩꽍 吏꾪뻾 以?.. (${attempts * 2}珥?寃쎄낵)`);
+                        setGenerationStatus(`리포트 생성 중... (${attempts * 2}초 경과)`);
                     }
                 } catch (err) {
                     console.error("Polling error", err);
                     // On error, still update the time to show we're retrying
-                    setGenerationStatus(`?ъ떆??以?.. (${attempts * 2}珥?寃쎄낵)`);
+                    setGenerationStatus(`네트워크 재시도 중... (${attempts * 2}초 경과)`);
                 }
             }
 
             if (!isDone) {
-                alert("由ы룷???앹꽦 ?쒓컙???덈Т ?ㅻ옒 嫄몃┰?덈떎. ?쇱씠釉뚮윭由ъ뿉???섏쨷???뺤씤?댁＜?몄슂.");
+                alert("리포트 생성 시간이 오래 걸립니다. 잠시 후 다시 시도해 주세요.");
                 setActiveTab('library');
                 fetchReports();
             }
         } catch (error) {
-            alert("由ы룷???앹꽦 ?붿껌 ?ㅽ뙣");
+            alert("리포트 생성에 실패했습니다.");
         } finally {
             setIsGenerating(false);
             setGenerationStatus('');
@@ -359,7 +359,7 @@ export default function Reports() {
     };
 
     const handleDeleteReport = async (id: number) => {
-        if (!confirm("??由ы룷?몃? ??젣?섏떆寃좎뒿?덇퉴?")) return;
+        if (!confirm("???귐뗫７?紐? ?????뤿뻻野껋쥙???뉙돱?")) return;
 
         // Optimistic UI update: Remove from list immediately
         const previousReports = [...reports];
@@ -381,7 +381,7 @@ export default function Reports() {
         } catch (error) {
             // Rollback if failed
             setReports(previousReports);
-            alert("??젣 ?ㅽ뙣: " + (error instanceof Error ? error.message : "?????녿뒗 ?ㅻ쪟"));
+            alert("??????쎈솭: " + (error instanceof Error ? error.message : "??????용뮉 ??살첒"));
         }
     };
 
@@ -507,7 +507,7 @@ export default function Reports() {
                                                             link.click();
                                                         }}
                                                         className="text-blue-400 hover:bg-blue-400/10 p-2 rounded-lg transition-colors flex items-center justify-center"
-                                                        title="?ㅼ슫濡쒕뱶"
+                                                        title="다운로드"
                                                     >
                                                         <span className="material-symbols-outlined text-[20px]">download</span>
                                                     </button>
@@ -516,7 +516,7 @@ export default function Reports() {
                                                     <button
                                                         onClick={() => fetchReportDetail(r.id)}
                                                         className="text-cyan-300 hover:bg-cyan-300/10 p-2 rounded-lg transition-colors flex items-center justify-center"
-                                                        title="由ы룷??蹂닿린"
+                                                        title="보기"
                                                     >
                                                         <span className="material-symbols-outlined text-[20px]">visibility</span>
                                                     </button>
@@ -525,7 +525,7 @@ export default function Reports() {
                                                     <button
                                                         onClick={() => handleDeleteReport(r.id)}
                                                         className="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center"
-                                                        title="由ы룷????젣"
+                                                        title="삭제"
                                                     >
                                                         <span className="material-symbols-outlined text-[20px]">delete</span>
                                                     </button>
@@ -536,7 +536,7 @@ export default function Reports() {
                                     {reports.length === 0 && (
                                         <tr>
                                             <td colSpan={4} className="px-4 py-8 text-center text-text-subtle">
-                                                ?앹꽦??由ы룷?멸? ?놁뒿?덈떎.
+                                                아직 생성된 리포트가 없습니다.
                                             </td>
                                         </tr>
                                     )}
@@ -603,14 +603,14 @@ export default function Reports() {
                                         {isBackfilling ? (
                                             <span className="flex items-center gap-2">
                                                 <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                                공시 3년 확장 중...
+                                                怨듭떆 3???뺤옣 以?..
                                             </span>
-                                        ) : '공시 3년 확장'}
+                                        ) : '怨듭떆 3???뺤옣'}
                                     </button>
                                     {dartBackfill?.status && (
                                         <span className="text-xs text-text-subtle">
-                                            상태: {dartBackfill.status}
-                                            {dartBackfill.row_count ? ` / ${dartBackfill.row_count}건` : ''}
+                                            ?곹깭: {dartBackfill.status}
+                                            {dartBackfill.row_count ? ` / ${dartBackfill.row_count}嫄? : ''}
                                         </span>
                                     )}
                                 </div>
@@ -689,7 +689,7 @@ export default function Reports() {
                                                 {/* Render Chart between parts if not the last part */}
                                                 {idx < reportContent.split(':::chart-financial-annual:::').length - 1 && selectedReportId && (
                                                     <div className="my-8 h-[300px] w-full border border-gray-200 rounded p-4 break-inside-avoid page-break-inside-avoid">
-                                                        <h3 className="text-center mb-4 text-sm font-bold">?щТ?ㅼ쟻(Financial Performance)</h3>
+                                                        <h3 className="text-center mb-4 text-sm font-bold">??龜??쇱읅(Financial Performance)</h3>
                                                         <ReportChartLoader reportId={selectedReportId} />
                                                     </div>
                                                 )}
@@ -792,4 +792,7 @@ export default function Reports() {
         </div>
     );
 }
+
+
+
 
