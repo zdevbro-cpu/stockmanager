@@ -1,4 +1,4 @@
-import os
+﻿import os
 import datetime
 import re
 import google.generativeai as genai
@@ -22,7 +22,7 @@ def fetch_google_news(query: str, limit: int | None = None) -> str:
         response = requests.get(url, timeout=5)
         
         if response.status_code != 200:
-            return "뉴스 데이터를 불러올 수 없습니다."
+            return "뉴스 데이터를 불러오지 못했습니다."
             
         root = ET.fromstring(response.content)
         items = root.findall('.//item')
@@ -41,7 +41,7 @@ def fetch_google_news(query: str, limit: int | None = None) -> str:
         return "\n".join(news_list)
     except Exception as e:
         print(f"News fetch error: {e}")
-        return "뉴스 데이터 수집 중 오류 발생"
+        return "뉴스 데이터를 가져오는 중 오류가 발생했습니다."
 
 def generate_ai_report(company_id: int, report_id: int):
     """
@@ -76,7 +76,7 @@ def generate_ai_report(company_id: int, report_id: int):
         
         # 2. Fetch News (Increase limit)
         news_summary = fetch_google_news(name, limit=None) 
-        today_str = datetime.date.today().strftime("%Y년 %m월 %d일")
+        today_str = datetime.date.today().strftime("%Y-%m-%d")
         
         # 3. Setup AI
         api_key = settings.GOOGLE_API_KEY or os.environ.get("GOOGLE_API_KEY")
@@ -86,59 +86,121 @@ def generate_ai_report(company_id: int, report_id: int):
         genai.configure(api_key=api_key)
         model_id = 'models/gemini-2.0-flash'
         model = genai.GenerativeModel(model_id)
+        fin_summary_rows = db.execute(text("""
+            SELECT fiscal_year, revenue, op_income, net_income, assets, equity
+            FROM fs_mart_annual
+            WHERE company_id = :cid
+            ORDER BY fiscal_year DESC
+            LIMIT 3
+        """), {"cid": company_id}).fetchall()
+
+        fin_ratio_rows = db.execute(text("""
+            SELECT fiscal_year, op_margin, roe, debt_ratio
+            FROM fs_ratio_mart
+            WHERE company_id = :cid AND period_type = 'ANNUAL'
+            ORDER BY fiscal_year DESC
+            LIMIT 3
+        """), {"cid": company_id}).fetchall()
+
+        def _to_float(value):
+            try:
+                return float(value) if value is not None else None
+            except (TypeError, ValueError):
+                return None
+
+        def _fmt_krw_100m(value):
+            if value is None:
+                return '-'
+            return f"{value / 100000000:,.1f}억"
+
+        def _fmt_pct(value):
+            if value is None:
+                return '-'
+            return f"{value:.1f}%"
+
+        summary_by_year = {}
+        for row in fin_summary_rows:
+            summary_by_year[row.fiscal_year] = {
+                'revenue': _to_float(row.revenue),
+                'op_income': _to_float(row.op_income),
+                'net_income': _to_float(row.net_income),
+                'assets': _to_float(row.assets),
+                'equity': _to_float(row.equity),
+            }
+
+        ratio_by_year = {}
+        for row in fin_ratio_rows:
+            ratio_by_year[row.fiscal_year] = {
+                'op_margin': _to_float(row.op_margin),
+                'roe': _to_float(row.roe),
+                'debt_ratio': _to_float(row.debt_ratio),
+            }
+
+        years = sorted(set(summary_by_year.keys()) | set(ratio_by_year.keys()), reverse=True)[:3]
+        if not years:
+            current_year = datetime.date.today().year
+            years = [current_year - 1, current_year - 2, current_year - 3]
+
+        def _build_table(headers, rows):
+            header = '| ' + ' | '.join(headers) + ' |'
+            separator = '| ' + ' | '.join([':---'] + [':---:' for _ in headers[1:]]) + ' |'
+            body = ['| ' + ' | '.join(row) + ' |' for row in rows]
+            return '\n'.join([header, separator] + body)
+
+        financial_rows = [
+            ['매출액'] + [_fmt_krw_100m(summary_by_year.get(y, {}).get('revenue')) for y in years],
+            ['영업이익'] + [_fmt_krw_100m(summary_by_year.get(y, {}).get('op_income')) for y in years],
+            ['순이익'] + [_fmt_krw_100m(summary_by_year.get(y, {}).get('net_income')) for y in years],
+            ['자산총계'] + [_fmt_krw_100m(summary_by_year.get(y, {}).get('assets')) for y in years],
+            ['자본총계'] + [_fmt_krw_100m(summary_by_year.get(y, {}).get('equity')) for y in years],
+        ]
+        financial_table = _build_table(['구분'] + [f'{y}년' for y in years], financial_rows)
+
+        ratio_rows = [
+            ['영업이익률'] + [_fmt_pct(ratio_by_year.get(y, {}).get('op_margin')) for y in years],
+            ['ROE'] + [_fmt_pct(ratio_by_year.get(y, {}).get('roe')) for y in years],
+            ['부채비율'] + [_fmt_pct(ratio_by_year.get(y, {}).get('debt_ratio')) for y in years],
+        ]
+        ratio_table = _build_table(['지표'] + [f'{y}년' for y in years], ratio_rows)
+
+        has_fin_data = bool(summary_by_year or ratio_by_year)
+        data_note = '' if has_fin_data else '재무 데이터가 부족하여 일부 항목은 - 로 표시됩니다.'
         
-        fin_data = {
-            "2023": {"rev": "320조", "op": "48조", "net": "38.4조", "asset": "480조", "liab": "144조", "cap": "336조", "op_margin": "15.0%", "roe": "11.4%", "debt_ratio": "42.9%"},
-            "2022": {"rev": "310조", "op": "46.5조", "net": "37.2조", "asset": "465조", "liab": "139.5조", "cap": "325.5조", "op_margin": "15.0%", "roe": "11.4%", "debt_ratio": "42.9%"},
-            "2021": {"rev": "300조", "op": "45조", "net": "36조", "asset": "450조", "liab": "135조", "cap": "315조", "op_margin": "15.0%", "roe": "11.4%", "debt_ratio": "42.9%"}
-        }
 
         # --- PART 1: Intro & Financials ---
         print("Generating Part 1 (Summary & Financials)...")
         prompt1 = f"""
 당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제1부(요약 및 재무)**를 작성하십시오.
-상세하고 전문적인 어조로 작성하십시오.
+정량/정성 분석을 포함한 전문적인 톤으로 작성하십시오.
 
-**[목차]**
+[목차]
 # 투자 검토 보고서: {name}
 
 ## 1. 투자 요약 (Executive Summary)
-(A4 1페이지 분량의 심층 에세이. 핵심 경쟁력, 시장 기회, 리스크 관리, 최종 의견 포함)
+(A4 1페이지 분량으로 핵심 요약: 시장 기회, 리스크, 투자 포인트, 결론)
 
 ## 2. 재무 실적 및 지표 심층 분석
 
 ### 2.1 재무상태표 및 손익계산서 요약
+{financial_table}
 
-| 구분 | 2023년 | 2022년 | 2021년 |
-| :--- | :---: | :---: | :---: |
-| 매출액 | 320조 | 310조 | 300조 |
-| 영업이익 | 48조 | 46.5조 | 45조 |
-| 순이익 | 38.4조 | 37.2조 | 36조 |
-| 자산총계 | 480조 | 465조 | 450조 |
-| 부채총계 | 144조 | 139.5조 | 135조 |
-| 자본총계 | 336조 | 325.5조 | 315조 |
+### 2.2 주요 재무 지표
+{ratio_table}
+{data_note}
 
-### 2.2 주요 투자 지표
-
-| 지표 | 2023년 | 2022년 | 2021년 |
-| :--- | :---: | :---: | :---: |
-| 영업이익률 | 15.0% | 15.0% | 15.0% |
-| ROE | 11.4% | 11.4% | 11.4% |
-| 부채비율 | 42.9% | 42.9% | 42.9% |
-
-### 2.3 심층 분석
-(재무제표 수치의 질적 변화를 5문단 이상 심층 분석)
+### 2.3 재무 분석
+(재무제표 수치 변화의 원인과 질적 변화를 5문단 이상으로 분석)
 
 ### 2.4 매출 및 이익 성장
-(제품별/지역별 매출 성장 동력 분석)
+(사업/제품별 성장 동력과 구조적 요인을 분석)
 
-### 2.5 수익성 및 효율성
-(마진율 변화 및 비용 통제 능력 분석)
+### 2.5 수익성/효율성 분석
+(마진 변화, 비용 구조, 운영 효율 개선 가능성)
 
 ### 2.6 재무 건전성
-(부채비율, 현금흐름 등을 통한 위기 대응 능력 평가)
+(부채비율, 현금흐름, 유동성 관점에서 위험 요인 평가)
 
-반드시 마크다운으로 출력하십시오.
+마크다운으로 작성하십시오.
 """
         resp1 = model.generate_content(prompt1)
         part1 = clean_markdown(resp1.text)
@@ -148,30 +210,30 @@ def generate_ai_report(company_id: int, report_id: int):
         time.sleep(1)
         prompt2 = f"""
 당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제2부(사업 모델)**를 작성하십시오.
-이전 섹션에 이어지는 내용입니다.
+정량/정성 근거를 포함해 서술하십시오.
 
-**[목차]**
-## 3. 사업모델 및 핵심 이슈
+[목차]
+## 3. 사업 모델 및 경쟁 우위
 
-### 3.1 [현황 1: 주력 사업의 경쟁력과 과제]
-(시장 점유율, 경쟁 강도, 기술 격차 등 5문단 이상)
+### 3.1 핵심 사업 구조와 수익원
+(주요 제품/서비스, 매출 구성, 수익 구조를 설명)
 
-### 3.2 [현황 2: 신성장 동력의 진행 상황]
-(미래 먹거리 로드맵, 가시적 성과 시점 등 5문단 이상)
+### 3.2 시장 포지션 및 경쟁 환경
+(시장 규모, 성장률, 경쟁사 대비 차별점)
 
-### 3.3 [현황 3: 글로벌 공급망 및 지정학적 이슈]
-(대외 환경 영향 분석 5문단 이상)
+### 3.3 성장 전략 및 제품 로드맵
+(신규 시장/제품 확장 전략과 실행 가능성)
 
-### 3.4 [현황 4: 조직 혁신 및 ESG 경영]
-(조직 문화, 인재, ESG 이슈 5문단 이상)
+### 3.4 운영 역량 및 ESG
+(생산/공급망/인재/ESG 관점에서 평가)
 
-### 3.5 결론: 사업 모델의 지속 가능성 평가
-(향후 10년 지속 가능성 평가)
+### 3.5 결론: 사업 모델의 지속 가능성
+(향후 3~5년 관점에서 지속성 평가)
 
 **뉴스 참고:**
 {news_summary}
 
-반드시 마크다운으로 출력하십시오.
+마크다운으로 작성하십시오.
 """
         resp2 = model.generate_content(prompt2)
         part2 = clean_markdown(resp2.text)
@@ -180,34 +242,51 @@ def generate_ai_report(company_id: int, report_id: int):
         print("Generating Part 3 (Risks & Conclusion)...")
         time.sleep(1)
         prompt3 = f"""
-당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제3부(리스크, 기회, 결론)**를 작성하십시오.
-불렛 포인트 개수를 정확히 지키십시오.
+당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제3부(리스크/기회/결론)**를 작성하십시오.
+정확하고 구체적인 항목으로 작성하십시오.
 
-**[목차]**
-## 4. 리스크 및 기회요인 분석
+[목차]
+## 4. 리스크 및 기회 요인
 
 ### 4.1 리스크 요인 (Risk Factors)
-(각 항목 3문장 이상, **정확히 8개**)
-o **[리스크 1]:** ...
-(8개까지 작성)
+(각 항목 3문장 이상, 정확히 8개)
+- [리스크 1]
+- [리스크 2]
+- [리스크 3]
+- [리스크 4]
+- [리스크 5]
+- [리스크 6]
+- [리스크 7]
+- [리스크 8]
 
 ### 4.2 기회 요인 (Opportunity Factors)
-(각 항목 3문장 이상, **정확히 8개**)
-o **[기회 1]:** ...
-(8개까지 작성)
+(각 항목 3문장 이상, 정확히 8개)
+- [기회 1]
+- [기회 2]
+- [기회 3]
+- [기회 4]
+- [기회 5]
+- [기회 6]
+- [기회 7]
+- [기회 8]
 
-## 5. 최종 투자의견 및 모니터링 포인트
+## 5. 최종 투자 결론 및 모니터링 포인트
 
-### 5.1 최종 투자 의견
-**[의견: 매수 (Buy)]**
-(투자 당위성을 3문단 이상 강력하게 호소)
+### 5.1 최종 투자 결론
+(투자 의견과 근거를 3문단 이상)
 
 ### 5.2 모니터링 포인트
-(핵심 지표 **정확히 8개**)
-o **[Point 1]:** ...
-(8개까지 작성)
+(정확히 8개 항목)
+- [포인트 1]
+- [포인트 2]
+- [포인트 3]
+- [포인트 4]
+- [포인트 5]
+- [포인트 6]
+- [포인트 7]
+- [포인트 8]
 
-반드시 마크다운으로 출력하십시오.
+마크다운으로 작성하십시오.
 """
         resp3 = model.generate_content(prompt3)
         part3 = clean_markdown(resp3.text)
@@ -217,20 +296,32 @@ o **[Point 1]:** ...
         time.sleep(1)
         prompt4 = f"""
 당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제4부(뉴스 인사이트)**를 작성하십시오.
-최신 뉴스를 분석하여 **정확히 16개 항목**을 작성하십시오.
+최근 뉴스 기준으로 16개 항목을 정리하십시오.
 
-**[뉴스 데이터]**
+**뉴스 참고:**
 {news_summary}
 
-**[목차]**
-## 6. 인터넷 뉴스 및 기사 인사이트
-(각 항목은 뉴스 제목과 상세 투자 인사이트 포함)
-o **[뉴스 1]:** ...
-o **[뉴스 2]:** ...
-...
-o **[뉴스 16]:** ...
+[목차]
+## 6. 최근 뉴스 및 인사이트
+(각 항목에 뉴스 제목과 의미를 요약)
+- [뉴스 1]
+- [뉴스 2]
+- [뉴스 3]
+- [뉴스 4]
+- [뉴스 5]
+- [뉴스 6]
+- [뉴스 7]
+- [뉴스 8]
+- [뉴스 9]
+- [뉴스 10]
+- [뉴스 11]
+- [뉴스 12]
+- [뉴스 13]
+- [뉴스 14]
+- [뉴스 15]
+- [뉴스 16]
 
-반드시 마크다운으로 출력하십시오.
+마크다운으로 작성하십시오.
 """
         resp4 = model.generate_content(prompt4)
         part4 = clean_markdown(resp4.text)
@@ -283,14 +374,14 @@ def clean_markdown(text):
     return text.strip()
 
 def markdown_to_docx_converter(markdown_text, output_path, company_name, ticker):
-    """마크다운을 DOCX로 변환 (H4 및 서브 섹션 지원 강화)"""
+    """留덊겕?ㅼ슫??DOCX濡?蹂??(H4 諛??쒕툕 ?뱀뀡 吏??媛뺥솕)"""
     from docx import Document
     from docx.shared import Pt, RGBColor, Inches
     import re
     
     doc = Document()
     
-    # 페이지 설정
+    # ?섏씠吏 ?ㅼ젙
     sections = doc.sections
     for section in sections:
         section.page_height = Inches(11.69)

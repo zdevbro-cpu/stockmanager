@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -142,43 +142,45 @@ def get_financial_chart(company_id: int, chart_key: str):
         # If no cache (Cold Start), generate on-the-fly (Stub logic for MVP)
         # In real spec, this should trigger a generation job or calc logic.
         # Here we return a standardized structure based on marts.
-        
         if chart_key == "FIN_IS_ANNUAL_3Y":
             # Generate from Mart
             rows = db.execute(text("""
                 SELECT fiscal_year, revenue, op_income, net_income
                 FROM fs_mart_annual
                 WHERE company_id = :cid
-                ORDER BY fiscal_year ASC
+                ORDER BY fiscal_year DESC
                 LIMIT 5
             """), {"cid": company_id}).fetchall()
-            
+            rows = list(rows)[::-1]
+
             data = [
                 {
                     "name": str(row.fiscal_year),
-                    "매출액": float(row.revenue or 0),
-                    "영업이익": float(row.op_income or 0),
-                    "순이익": float(row.net_income or 0)
+                    "revenue": float(row.revenue or 0),
+                    "op_income": float(row.op_income or 0),
+                    "net_income": float(row.net_income or 0)
                 } for row in rows
             ]
             return data
-            
+
         elif chart_key == "FIN_RATIO_TREND":
-             rows = db.execute(text("""
+            rows = db.execute(text("""
                 SELECT fiscal_year, op_margin, roe
                 FROM fs_ratio_mart
                 WHERE company_id = :cid AND period_type = 'ANNUAL'
-                ORDER BY fiscal_year ASC
+                ORDER BY fiscal_year DESC
                 LIMIT 5
             """), {"cid": company_id}).fetchall()
-             
-             data = [
+            rows = list(rows)[::-1]
+
+            data = [
                 {
                     "name": str(row.fiscal_year),
-                    "영업이익률": float(row.op_margin or 0),
-                    "ROE": float(row.roe or 0)
+                    "op_margin": float(row.op_margin or 0),
+                    "roe": float(row.roe or 0)
                 } for row in rows
             ]
-             return data
+            return data
         
         raise HTTPException(status_code=404, detail="Chart not found")
+

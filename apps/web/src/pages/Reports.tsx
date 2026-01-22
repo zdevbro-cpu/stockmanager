@@ -689,7 +689,7 @@ export default function Reports() {
                                                 {/* Render Chart between parts if not the last part */}
                                                 {idx < reportContent.split(':::chart-financial-annual:::').length - 1 && selectedReportId && (
                                                     <div className="my-8 h-[300px] w-full border border-gray-200 rounded p-4 break-inside-avoid page-break-inside-avoid">
-                                                        <h3 className="text-center mb-4 text-sm font-bold">??龜??쇱읅(Financial Performance)</h3>
+                                                        <h3 className="text-center mb-4 text-sm font-bold">재무 성과 (Financial Performance)</h3>
                                                         <ReportChartLoader reportId={selectedReportId} />
                                                     </div>
                                                 )}
