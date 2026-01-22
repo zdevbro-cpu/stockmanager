@@ -1,5 +1,7 @@
 $ErrorActionPreference = "Stop"
 
+Write-Host "run_local.ps1 실행 시작"
+
 $root = Split-Path -Parent $PSScriptRoot
 $apiDir = Join-Path $root "apps\\api"
 $webDir = Join-Path $root "apps\\web"
@@ -45,21 +47,26 @@ function Start-ConsoleProcess {
     Start-Process -FilePath "powershell" -ArgumentList $args -WorkingDirectory $WorkDir | Out-Null
 }
 
-Write-Host "환경 체크..."
-Require-Command "docker"
-Require-Command "npm"
-Require-Command $pythonExe
+try {
+    Write-Host "환경 체크..."
+    Require-Command "docker"
+    Require-Command "npm"
+    Require-Command $pythonExe
 
-Write-Host "Docker 상태 확인..."
-Invoke-Checked -Command "docker info >nul 2>nul" -WorkDir $root
+    Write-Host "Docker 상태 확인..."
+    Invoke-Checked -Command "docker info >nul 2>nul" -WorkDir $root
 
-Write-Host "Starting docker compose..."
-Invoke-Checked -Command "docker compose up -d" -WorkDir $root
+    Write-Host "Starting docker compose..."
+    Invoke-Checked -Command "docker compose up -d" -WorkDir $root
 
-Write-Host "Starting API server..."
-Start-ConsoleProcess -Command "$pythonExe -m uvicorn app.main:app --reload --port 8010" -WorkDir $apiDir -Title "stockmanager-api"
+    Write-Host "Starting API server..."
+    Start-ConsoleProcess -Command "$pythonExe -m uvicorn app.main:app --reload --port 8010" -WorkDir $apiDir -Title "stockmanager-api"
 
-Write-Host "Starting web dev server..."
-Start-ConsoleProcess -Command "npm run dev -- --host" -WorkDir $webDir -Title "stockmanager-web"
+    Write-Host "Starting web dev server..."
+    Start-ConsoleProcess -Command "npm run dev -- --host" -WorkDir $webDir -Title "stockmanager-web"
 
-Write-Host "Done. Close the opened windows to stop API/Web."
+    Write-Host "Done. Close the opened windows to stop API/Web."
+} catch {
+    Write-Host "실패: $($_.Exception.Message)"
+    exit 1
+}
