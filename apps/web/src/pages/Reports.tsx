@@ -130,6 +130,7 @@ export default function Reports() {
         setTargetCompanyId(c.id.toString());
         setSelectedCompanyName(c.name);
         setSelectedCompanyCode(c.ticker || c.code || c.stock_code || '');
+        setDartBackfill(null);
         setSearchTerm(c.name);
         setSearchResults([]);
     };
@@ -234,7 +235,7 @@ export default function Reports() {
             // Polling for status
             let isDone = false;
             let attempts = 0;
-            const maxAttempts = 60; // 2 mins max
+            const maxAttempts = 300; // 10 mins max
 
             while (!isDone && attempts < maxAttempts) {
                 await new Promise(resolve => setTimeout(resolve, 2000)); // Poll every 2s
@@ -390,7 +391,7 @@ export default function Reports() {
     };
 
     const handleDeleteReport = async (id: number) => {
-        if (!confirm("???귐뗫７?紐? ?????뤿뻻野껋쥙???뉙돱?")) return;
+        if (!confirm("정말로 이 보고서를 삭제하시겠습니까?")) return;
 
         // Optimistic UI update: Remove from list immediately
         const previousReports = [...reports];
@@ -614,16 +615,8 @@ export default function Reports() {
                                         </div>
                                     )}
                                 </div>
-                                {targetCompanyId && (
-                                    <p className="text-xs text-primary font-bold mt-1">
-                                        선택 종목: {selectedCompanyName}({selectedCompanyCode || targetCompanyId})
-                                    </p>
-                                )}
-                                <div className="mt-4">
-                                    <DocumentManager companyId={targetCompanyId} />
-                                </div>
-                                <div className="mt-4">
-                                    <div className="flex items-start gap-3">
+                                <div className="mt-3">
+                                    <div className="flex items-center gap-4 flex-nowrap">
                                         <button
                                             onClick={handleDartBackfill}
                                             disabled={!targetCompanyId || isBackfilling}
@@ -644,14 +637,26 @@ export default function Reports() {
                                             )}
                                         </button>
                                         {isBackfillFinished && backfillStatus && (
-                                            <div className="text-xs text-text-subtle mt-1">
-                                                <div>상태: {backfillStatus.statusLabel}</div>
-                                                <div>진행완료건수/총건수: {backfillStatus.processed ?? '-'} / {backfillStatus.total ?? '-'}</div>
-                                                {backfillStatus.finishedAt && <div>완료 시각: {backfillStatus.finishedAt}</div>}
+                                            <div className="text-xs text-text-subtle leading-tight">
+                                                <div>
+                                                    상태{backfillStatus.statusLabel}
+                                                    {backfillStatus.finishedAt ? `(${backfillStatus.finishedAt})` : ''}
+                                                </div>
+                                                <div>진행완료건수/총건수 ({backfillStatus.processed ?? '-'} / {backfillStatus.total ?? '-'})</div>
                                                 {backfillStatus.message && <div>메시지: {backfillStatus.message}</div>}
                                             </div>
                                         )}
+                                        {targetCompanyId && (
+                                            <div className="ml-auto">
+                                                <span className="text-xs text-cyan-300 font-bold">
+                                                    선택 종목: {selectedCompanyName}({selectedCompanyCode || targetCompanyId})
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
+                                </div>
+                                <div className="mt-4">
+                                    <DocumentManager companyId={targetCompanyId} />
                                 </div>
                             </div>
 

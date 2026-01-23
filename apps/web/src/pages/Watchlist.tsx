@@ -26,23 +26,27 @@ export default function Watchlist() {
     const { watchlist, addStock, removeStock, updateNote } = useWatchlist();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
+    const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [quotes, setQuotes] = useState<Record<string, Quote>>({});
     const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
+    const [nameMap, setNameMap] = useState<Record<string, string>>({});
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
-        if (results.length === 1) {
-            const pick = results[0];
+        const pick = selectedResult ?? (results.length === 1 ? results[0] : null);
+        if (pick) {
             addStock(pick.ticker, pick.name);
             setQuery('');
             setResults([]);
+            setSelectedResult(null);
         }
     };
 
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
+            setSelectedResult(null);
             return;
         }
         let cancelled = false;
@@ -54,6 +58,7 @@ export default function Watchlist() {
                 });
                 if (!cancelled) {
                     setResults(response.data || []);
+                    setSelectedResult(null);
                 }
             } catch (error) {
                 if (!cancelled) {
@@ -105,6 +110,42 @@ export default function Watchlist() {
         };
     }, [api, watchlist]);
 
+    useEffect(() => {
+        const targets = watchlist
+            .filter((item) => !item.name || item.name === item.ticker)
+            .map((item) => item.ticker)
+            .filter(Boolean);
+        if (targets.length === 0) return;
+        let cancelled = false;
+        const fetchNames = async () => {
+            const entries = await Promise.all(
+                targets.map(async (ticker) => {
+                    try {
+                        const response = await api.get<SearchResult[]>('/companies/search', {
+                            params: { q: ticker },
+                        });
+                        const first = (response.data || [])[0];
+                        return first?.name ? [ticker, first.name] as const : null;
+                    } catch {
+                        return null;
+                    }
+                })
+            );
+            if (cancelled) return;
+            const next: Record<string, string> = { ...nameMap };
+            entries.forEach((entry) => {
+                if (!entry) return;
+                const [ticker, name] = entry;
+                next[ticker] = name;
+            });
+            setNameMap(next);
+        };
+        fetchNames();
+        return () => {
+            cancelled = true;
+        };
+    }, [api, watchlist, nameMap]);
+
     const formatNumber = (value: number | null, digits = 0) => {
         if (value === null || value === undefined || Number.isNaN(value)) {
             return '-';
@@ -151,11 +192,11 @@ export default function Watchlist() {
                                         {results.map((item) => (
                                             <li
                                                 key={`${item.ticker}-${item.id}`}
-                                                className="px-4 py-3 text-sm text-white hover:bg-white/5 cursor-pointer flex items-center justify-between"
+                                                className={`px-4 py-3 text-sm text-white cursor-pointer flex items-center justify-between ${selectedResult?.ticker === item.ticker ? 'bg-white/10' : 'hover:bg-white/5'}`}
                                                 onMouseDown={(event) => {
                                                     event.preventDefault();
-                                                    addStock(item.ticker, item.name);
-                                                    setQuery('');
+                                                    setSelectedResult(item);
+                                                    setQuery(item.name);
                                                     setResults([]);
                                                 }}
                                             >
@@ -193,7 +234,7 @@ export default function Watchlist() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-[#151e1d] border-b border-border-dark text-text-subtle">
-                                    <th className="px-6 py-4 text-left font-bold w-52">종목 (Ticker)</th>
+                                    <th className="px-6 py-4 text-left font-bold w-52">종목명 (Ticker)</th>
                                     <th className="px-6 py-4 text-right font-bold w-32">Prev Close</th>
                                     <th className="px-6 py-4 text-right font-bold w-32">Last Price</th>
                                     <th className="px-6 py-4 text-right font-bold w-32">Change</th>
@@ -211,8 +252,12 @@ export default function Watchlist() {
                                         <tr key={item.ticker} className="hover:bg-white/5 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-white font-bold">{item.name}</span>
-                                                    <span className="text-text-subtle text-xs font-mono">{item.ticker}</span>
+                                                    <span className="text-white font-bold">
+                                                        {item.name && item.name !== item.ticker
+                                                            ? item.name
+                                                            : (nameMap[item.ticker] || item.ticker)}
+                                                    </span>
+                                                    <span className="text-xs text-text-subtle">{item.ticker}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right text-text-subtle">

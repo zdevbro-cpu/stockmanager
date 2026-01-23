@@ -1,5 +1,6 @@
 ﻿import os
 import datetime
+import time
 import re
 import google.generativeai as genai
 from sqlalchemy.orm import Session
@@ -8,6 +9,7 @@ from typing import List
 import xml.etree.ElementTree as ET
 import urllib.parse
 import requests
+import unicodedata
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 
@@ -49,7 +51,6 @@ def generate_ai_report(company_id: int, report_id: int):
     Calls AI multiple times to ensure length and stability.
     """
     from ..db import SessionLocal
-    import time
     
     db = SessionLocal()
     
@@ -68,6 +69,9 @@ def generate_ai_report(company_id: int, report_id: int):
         corp_code = company[1]
         ticker = company[2] or "N/A"
         sector = company[3] or "Technology"
+
+        # Ensure financial marts are populated for this company (DART on-demand)
+        ensure_financials_for_company(db, company_id, corp_code, ticker, name)
         
         # Update status to RUNNING
         db.execute(text("UPDATE report_request SET status = 'RUNNING' WHERE report_id = :rid"), {"rid": report_id})
@@ -139,7 +143,7 @@ def generate_ai_report(company_id: int, report_id: int):
 
         data_note = ''
 
-        if not summary_by_year and corp_code:
+        if corp_code:
             fs_rows = db.execute(text("""
                 SELECT period_end, item_name, value, consolidated_flag
                 FROM financial_statement
@@ -173,33 +177,39 @@ def generate_ai_report(company_id: int, report_id: int):
                 consolidated_rows = [r for r in rows if r.consolidated_flag]
                 target_rows = consolidated_rows or rows
 
+                if year not in summary_by_year:
+                    summary_by_year[year] = {}
+
                 summary_by_year[year] = {
-                    'revenue': _pick_value(target_rows, revenue_keys),
-                    'op_income': _pick_value(target_rows, op_income_keys),
-                    'net_income': _pick_value(target_rows, net_income_keys),
-                    'assets': _pick_value(target_rows, assets_keys),
-                    'equity': _pick_value(target_rows, equity_keys),
+                    'revenue': summary_by_year[year].get('revenue') or _pick_value(target_rows, revenue_keys),
+                    'op_income': summary_by_year[year].get('op_income') or _pick_value(target_rows, op_income_keys),
+                    'net_income': summary_by_year[year].get('net_income') or _pick_value(target_rows, net_income_keys),
+                    'assets': summary_by_year[year].get('assets') or _pick_value(target_rows, assets_keys),
+                    'equity': summary_by_year[year].get('equity') or _pick_value(target_rows, equity_keys),
                 }
 
-            data_note = 'DART 재무 데이터 기준으로 작성되었습니다.'
+            if fs_by_year:
+                data_note = 'DART 재무 데이터 기준으로 작성되었습니다.'
 
-        if not ratio_by_year and summary_by_year:
+        if summary_by_year:
             for year, summary in summary_by_year.items():
                 revenue = summary.get('revenue')
                 op_income = summary.get('op_income')
                 net_income = summary.get('net_income')
                 assets = summary.get('assets')
                 equity = summary.get('equity')
+                if year not in ratio_by_year:
+                    ratio_by_year[year] = {}
                 ratio_by_year[year] = {
-                    'op_margin': (op_income / revenue * 100) if revenue else None,
-                    'roe': (net_income / equity * 100) if equity else None,
-                    'debt_ratio': ((assets - equity) / equity * 100) if assets is not None and equity else None,
+                    'op_margin': ratio_by_year[year].get('op_margin') or ((op_income / revenue * 100) if revenue else None),
+                    'roe': ratio_by_year[year].get('roe') or ((net_income / equity * 100) if equity else None),
+                    'debt_ratio': ratio_by_year[year].get('debt_ratio') or (((assets - equity) / equity * 100) if assets is not None and equity else None),
                 }
 
-        years = sorted(set(summary_by_year.keys()) | set(ratio_by_year.keys()), reverse=True)[:3]
-        if not years:
-            current_year = datetime.date.today().year
-            years = [current_year - 1, current_year - 2, current_year - 3]
+        years = _ensure_latest_years(db, corp_code)
+        for y in years:
+            summary_by_year.setdefault(y, {})
+            ratio_by_year.setdefault(y, {})
 
         def _build_table(headers, rows):
             header = '| ' + ' | '.join(headers) + ' |'
@@ -227,13 +237,12 @@ def generate_ai_report(company_id: int, report_id: int):
         if not has_fin_data:
             data_note = '재무 데이터가 부족하여 일부 항목은 - 로 표시됩니다.'
 
-        dart_filings_md = "## 부록: 최근 3년 공시 목록\n공시 데이터가 없습니다."
+        dart_filings_md = "## 부록: 최근 공시 50건\n공시 데이터가 없습니다."
         if corp_code:
             dart_rows = db.execute(text("""
                 SELECT filing_date, filing_type, title, rcp_no
                 FROM dart_filing
                 WHERE corp_code = :cc
-                  AND filing_date >= CURRENT_DATE - INTERVAL '1095 days'
                 ORDER BY filing_date DESC
                 LIMIT 50
             """), {"cc": corp_code}).fetchall()
@@ -245,14 +254,15 @@ def generate_ai_report(company_id: int, report_id: int):
                     title = row.title or "-"
                     rcp_no = row.rcp_no or "-"
                     lines.append(f"- {filing_date} [{filing_type}] {title} (rcp_no: {rcp_no})")
-                dart_filings_md = "## 부록: 최근 3년 공시 목록\n" + "\n".join(lines)
+                dart_filings_md = "## 부록: 최근 공시 50건\n" + "\n".join(lines)
         
 
         # --- PART 1: Intro & Financials ---
         print("Generating Part 1 (Summary & Financials)...")
         prompt1 = f"""
-당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제1부(요약 및 재무)**를 작성하십시오.
+당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **요약 및 재무**를 작성하십시오.
 정량/정성 분석을 포함한 전문적인 톤으로 작성하십시오.
+본문에 "제1부/제2부/제3부" 같은 파트 표기는 절대 포함하지 마십시오.
 
 [목차]
 # 투자 검토 보고서: {name}
@@ -285,13 +295,18 @@ def generate_ai_report(company_id: int, report_id: int):
 """
         resp1 = model.generate_content(prompt1)
         part1 = clean_markdown(resp1.text)
+        part1 = remove_part_labels(part1)
+        part1 = normalize_headings(part1)
+        part1 = normalize_report_header(part1, name, ticker)
+        part1 = _inject_financial_tables(part1, financial_table, ratio_table, data_note)
         
         # --- PART 2: Business Model ---
         print("Generating Part 2 (Business Model)...")
         time.sleep(1)
         prompt2 = f"""
-당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제2부(사업 모델)**를 작성하십시오.
+당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **사업 모델**을 작성하십시오.
 정량/정성 근거를 포함해 서술하십시오.
+본문에 "제1부/제2부/제3부" 같은 파트 표기는 절대 포함하지 마십시오.
 
 [목차]
 ## 3. 사업 모델 및 경쟁 우위
@@ -317,14 +332,18 @@ def generate_ai_report(company_id: int, report_id: int):
 마크다운으로 작성하십시오.
 """
         resp2 = model.generate_content(prompt2)
-        part2 = clean_markdown(resp2.text)
+        part2 = remove_part_labels(clean_markdown(resp2.text))
+        part2 = normalize_headings(part2)
+        part2 = normalize_part_header(part2, "제2부 (사업 모델)")
+        part2 = ensure_heading(part2, "3. 사업 모델 및 경쟁 우위")
 
         # --- PART 3: Risks, Opps, Ops ---
         print("Generating Part 3 (Risks & Conclusion)...")
         time.sleep(1)
         prompt3 = f"""
-당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제3부(리스크/기회/결론)**를 작성하십시오.
+당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **리스크/기회/결론**을 작성하십시오.
 정확하고 구체적인 항목으로 작성하십시오.
+본문에 "제1부/제2부/제3부" 같은 파트 표기는 절대 포함하지 마십시오.
 
 [목차]
 ## 4. 리스크 및 기회 요인
@@ -370,14 +389,18 @@ def generate_ai_report(company_id: int, report_id: int):
 마크다운으로 작성하십시오.
 """
         resp3 = model.generate_content(prompt3)
-        part3 = clean_markdown(resp3.text)
+        part3 = remove_part_labels(clean_markdown(resp3.text))
+        part3 = normalize_headings(part3)
+        part3 = normalize_part_header(part3, "제3부 (리스크/기회/결론)")
+        part3 = ensure_heading(part3, "4. 리스크 및 기회 요인")
 
         # --- PART 4: News Insights ---
         print("Generating Part 4 (News Insights)...")
         time.sleep(1)
         prompt4 = f"""
-당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **제4부(뉴스 인사이트)**를 작성하십시오.
+당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **뉴스 인사이트**를 작성하십시오.
 최근 뉴스 기준으로 16개 항목을 정리하십시오.
+본문에 "제1부/제2부/제3부" 같은 파트 표기는 절대 포함하지 마십시오.
 
 **뉴스 참고:**
 {news_summary}
@@ -405,10 +428,15 @@ def generate_ai_report(company_id: int, report_id: int):
 마크다운으로 작성하십시오.
 """
         resp4 = model.generate_content(prompt4)
-        part4 = clean_markdown(resp4.text)
+        part4 = remove_part_labels(clean_markdown(resp4.text))
+        part4 = normalize_headings(part4)
+        part4 = normalize_part_header(part4, "제4부 (뉴스 인사이트)")
+        part4 = ensure_heading(part4, "6. 최근 뉴스 및 인사이트")
 
         # Combine all parts
         full_report = f"{part1}\n\n{part2}\n\n{part3}\n\n{part4}\n\n{dart_filings_md}"
+        full_report = remove_part_labels(full_report)
+        _validate_report_output(full_report)
         
         # 4. Save as Markdown
         root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
@@ -453,6 +481,348 @@ def clean_markdown(text):
     if text.endswith("```"):
         text = text[:-3]
     return text.strip()
+
+def _normalize_text(text: str) -> str:
+    if not text:
+        return text
+    text = text.replace("\u200b", "").replace("\ufeff", "")
+    return unicodedata.normalize("NFKC", text)
+
+def remove_part_labels(markdown_text: str) -> str:
+    """Remove '제1부/제2부/...' labels from content."""
+    normalized = _normalize_text(markdown_text)
+    cleaned = re.sub(r"(?m)^\\s*(제\\s*)?\\d+\\s*부\\s*[:\\-–]*\\s*", "", normalized)
+    cleaned = re.sub(r"(제\\s*)?\\d+\\s*부", "", cleaned)
+    return cleaned
+
+def _inject_financial_tables(markdown_text: str, financial_table: str, ratio_table: str, data_note: str) -> str:
+    """Force-inject 2.1/2.2 tables so they don't get rewritten or dropped by the model."""
+    block = "\n".join([
+        "### 2.1 재무상태표 및 손익계산서 요약",
+        financial_table,
+        "",
+        "### 2.2 주요 재무 지표",
+        ratio_table,
+        data_note or "",
+        "",
+    ])
+
+    # Replace existing 2.1~2.2 sections if present.
+    pattern = r"(?s)###\\s*2\\.1.*?(?=###\\s*2\\.3|$)"
+    if re.search(pattern, markdown_text):
+        return re.sub(pattern, block, markdown_text, count=1)
+
+    # Otherwise insert right after the 2.x main header if present.
+    heading_pattern = r"(?m)^##\\s*2\\..*$"
+    if re.search(heading_pattern, markdown_text):
+        return re.sub(heading_pattern, lambda m: f"{m.group(0)}\n\n{block}", markdown_text, count=1)
+
+    return f"{markdown_text}\n\n{block}"
+
+def _safe_ratio(numerator: float | None, denominator: float | None) -> float | None:
+    if numerator is None or denominator in (None, 0):
+        return None
+    return (numerator / denominator) * 100
+
+def _pick_metric(existing: tuple[float | None, bool] | None, value: float | None, consolidated: bool) -> tuple[float | None, bool]:
+    if value is None:
+        return existing or (None, consolidated)
+    if existing is None:
+        return (value, consolidated)
+    if existing[1] and not consolidated:
+        return existing
+    if not existing[1] and consolidated:
+        return (value, consolidated)
+    return (value, consolidated)
+
+def build_marts_from_financial_statement(db, company_id: int, corp_code: str, years: list[int]):
+    if not corp_code or not years:
+        return
+    period_ends = [datetime.date(y, 12, 31) for y in years]
+    rows = db.execute(
+        text("""
+            SELECT period_end, item_name, value, consolidated_flag
+            FROM financial_statement
+            WHERE corp_code = :cc
+              AND period_end = ANY(:pends)
+        """),
+        {"cc": corp_code, "pends": period_ends}
+    ).fetchall()
+
+    metric_map = {
+        "revenue": ["매출액", "영업수익", "매출", "수익(매출액)", "이자수익", "보험수익"],
+        "op_income": ["영업이익", "영업이익(손실)"],
+        "net_income": ["당기순이익", "당기순이익(손실)", "연결당기순이익", "순이익"],
+        "assets": ["자산총계", "자산총액", "총자산"],
+        "liabilities": ["부채총계", "부채총액", "총부채"],
+        "equity": ["자본총계", "자본총액", "총자본"],
+    }
+
+    by_year: dict[int, dict[str, tuple[float | None, bool]]] = {}
+    for period_end, item_name, value, consolidated_flag in rows:
+        year = period_end.year
+        if year not in by_year:
+            by_year[year] = {}
+        for metric, names in metric_map.items():
+            if item_name in names:
+                prev = by_year[year].get(metric)
+                by_year[year][metric] = _pick_metric(prev, float(value) if value is not None else None, bool(consolidated_flag))
+
+    for year, metrics in by_year.items():
+        revenue = metrics.get("revenue", (None, False))[0]
+        op_income = metrics.get("op_income", (None, False))[0]
+        net_income = metrics.get("net_income", (None, False))[0]
+        assets = metrics.get("assets", (None, False))[0]
+        liabilities = metrics.get("liabilities", (None, False))[0]
+        equity = metrics.get("equity", (None, False))[0]
+
+        db.execute(
+            text("""
+                INSERT INTO fs_mart_annual (company_id, fiscal_year, revenue, op_income, net_income, assets, liabilities, equity, generated_at)
+                VALUES (:cid, :fy, :rev, :op, :net, :assets, :liab, :eq, NOW())
+                ON CONFLICT (company_id, fiscal_year)
+                DO UPDATE SET
+                    revenue = EXCLUDED.revenue,
+                    op_income = EXCLUDED.op_income,
+                    net_income = EXCLUDED.net_income,
+                    assets = EXCLUDED.assets,
+                    liabilities = EXCLUDED.liabilities,
+                    equity = EXCLUDED.equity,
+                    generated_at = NOW()
+            """),
+            {
+                "cid": company_id,
+                "fy": year,
+                "rev": revenue,
+                "op": op_income,
+                "net": net_income,
+                "assets": assets,
+                "liab": liabilities,
+                "eq": equity,
+            }
+        )
+
+        db.execute(
+            text("""
+                INSERT INTO fs_ratio_mart (company_id, period_type, fiscal_year, fiscal_quarter, op_margin, roe, debt_ratio, generated_at)
+                VALUES (:cid, 'ANNUAL', :fy, 4, :op_margin, :roe, :debt_ratio, NOW())
+                ON CONFLICT (company_id, period_type, fiscal_year, fiscal_quarter)
+                DO UPDATE SET
+                    op_margin = EXCLUDED.op_margin,
+                    roe = EXCLUDED.roe,
+                    debt_ratio = EXCLUDED.debt_ratio,
+                    generated_at = NOW()
+            """),
+            {
+                "cid": company_id,
+                "fy": year,
+                "op_margin": _safe_ratio(op_income, revenue),
+                "roe": _safe_ratio(net_income, equity),
+                "debt_ratio": _safe_ratio(liabilities, equity),
+            }
+        )
+
+    db.commit()
+
+def _resolve_corp_code(db, corp_code: str | None, stock_code: str | None, name_ko: str | None) -> str | None:
+    if corp_code:
+        return corp_code
+    if stock_code:
+        # Heuristic: preferred shares often end with 5 (e.g., 006405 -> 006400)
+        if stock_code.endswith("5"):
+            base_code = f"{stock_code[:-1]}0"
+            row = db.execute(
+                text("SELECT corp_code FROM company WHERE stock_code = :sc AND corp_code IS NOT NULL"),
+                {"sc": base_code}
+            ).fetchone()
+            if row and row[0]:
+                return row[0]
+    if name_ko and name_ko.endswith("우"):
+        base_name = name_ko[:-1]
+        row = db.execute(
+            text("SELECT corp_code FROM company WHERE name_ko = :name AND corp_code IS NOT NULL"),
+            {"name": base_name}
+        ).fetchone()
+        if row and row[0]:
+            return row[0]
+    return None
+
+def _latest_years_for_company(db, corp_code: str | None) -> list[int]:
+    if not corp_code:
+        return []
+    rows = db.execute(
+        text("""
+            SELECT DISTINCT EXTRACT(YEAR FROM period_end)::int AS y
+            FROM financial_statement
+            WHERE corp_code = :cc AND period_end IS NOT NULL
+            ORDER BY y DESC
+            LIMIT 3
+        """),
+        {"cc": corp_code}
+    ).fetchall()
+    return [row[0] for row in rows]
+
+def _candidate_years() -> list[int]:
+    current_year = datetime.date.today().year
+    # Look back 8 years to ensure we find at least 3 valid years of data even if recent ones are missing or delayed
+    return [current_year - i for i in range(8)]
+
+def _ensure_latest_years(db, corp_code: str, required: int = 3) -> list[int]:
+    years = _latest_years_for_company(db, corp_code)
+    if len(years) < required:
+        raise ValueError(f"Insufficient DART financial years: {len(years)} (need {required})")
+    return years[:required]
+
+def ensure_financials_for_company(db, company_id: int, corp_code: str | None, stock_code: str | None, name_ko: str | None):
+    corp_code = _resolve_corp_code(db, corp_code, stock_code, name_ko)
+    if not corp_code:
+        return
+
+    candidate_years = _candidate_years()
+
+    def _existing_years(years: list[int]) -> list[int]:
+        rows = db.execute(
+            text("""
+                SELECT DISTINCT EXTRACT(YEAR FROM period_end)::int
+                FROM financial_statement
+                WHERE corp_code = :cc AND period_end IS NOT NULL
+                  AND EXTRACT(YEAR FROM period_end)::int = ANY(:years)
+            """),
+            {"cc": corp_code, "years": years}
+        ).fetchall()
+        return [row[0] for row in rows]
+
+    def _missing_years(years: list[int]) -> list[int]:
+        existing_set = set(_existing_years(years))
+        return [y for y in years if y not in existing_set]
+
+    def _fetch_from_dart(years: list[int]) -> None:
+        if not years:
+            return
+        import sys
+        import os as _os
+        ingest_path = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "../../../../services/ingest"))
+        if ingest_path not in sys.path:
+            sys.path.append(ingest_path)
+        from ingest.dart_financials_loader import fetch_and_save_company_financials
+        fetch_and_save_company_financials(corp_codes=[corp_code], years=years)
+
+    # Fetch only missing years for this company
+    missing_before = _missing_years(candidate_years)
+    if missing_before:
+        try:
+            _fetch_from_dart(missing_before)
+        except Exception as e:
+            print(f"DART financials fetch failed: {e}")
+
+    # Retry remaining missing years once
+    missing_after = _missing_years(candidate_years)
+    if missing_after:
+        try:
+            _fetch_from_dart(missing_after)
+        except Exception as e:
+            print(f"DART financials retry failed: {e}")
+
+    latest_years = _ensure_latest_years(db, corp_code)
+    build_marts_from_financial_statement(db, company_id, corp_code, latest_years)
+
+def normalize_section_headings(markdown_text):
+    """섹션 번호 헤더의 레벨을 일관되게 정규화"""
+    lines = markdown_text.splitlines()
+    normalized = []
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped.startswith("### "):
+            title = stripped[4:].strip()
+            if re.match(r"^\d+\.\s", title) and not re.match(r"^\d+\.\d+", title):
+                line = line.replace("### ", "## ", 1)
+        normalized.append(line)
+    return "\n".join(normalized)
+
+def normalize_headings(markdown_text: str) -> str:
+    """Normalize heading markers and remove list bullets that leak into headings."""
+    keywords = [
+        "투자 요약",
+        "재무 실적",
+        "사업 모델",
+        "경쟁 우위",
+        "리스크",
+        "기회",
+        "최종 투자 결론",
+        "모니터링 포인트",
+        "최근 뉴스",
+        "인사이트",
+        "시장 포지션",
+        "시장 환경",
+        "재무상태표",
+        "손익계산서",
+    ]
+    lines = markdown_text.splitlines()
+    out = []
+    for line in lines:
+        raw = line.strip()
+        if raw.startswith(("-", "*", "•")):
+            candidate = raw.lstrip("-*•").strip()
+            if re.match(r"^\d+(\.\d+)?\s", candidate) or any(k in candidate for k in keywords):
+                raw = candidate
+
+        m = re.match(r"^\*\*(.+)\*\*$", raw)
+        if m:
+            title = m.group(1).strip()
+            if re.match(r"^\d+\.\d+\s", title):
+                out.append(f"### {title}")
+                continue
+            if re.match(r"^\d+\.\s", title):
+                out.append(f"## {title}")
+                continue
+            out.append(f"### {title}")
+            continue
+
+        if re.match(r"^\d+\.\d+\s", raw):
+            out.append(f"### {raw}")
+            continue
+        if re.match(r"^\d+\.\s", raw):
+            out.append(f"## {raw}")
+            continue
+
+        out.append(line)
+    return "\n".join(out)
+
+def ensure_heading(markdown_text: str, heading: str) -> str:
+    """Ensure a top-level heading exists in the block."""
+    if re.search(rf"(?m)^##\\s*{re.escape(heading)}\\b", markdown_text):
+        return markdown_text
+    return f"## {heading}\n\n{markdown_text}".strip()
+
+def normalize_report_header(markdown_text, name, ticker):
+    """첫 줄 헤더를 고정 포맷으로 정규화"""
+    markdown_text = normalize_headings(normalize_section_headings(_normalize_text(markdown_text)))
+    lines = markdown_text.splitlines()
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    if lines:
+        first = lines[0].lstrip()
+        if first.startswith("#"):
+            lines.pop(0)
+        elif "투자 검토 보고서" in first:
+            lines.pop(0)
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    ticker_display = ticker if ticker else "-"
+    fixed_header = f"# 투자 검토 보고서: {name} ({ticker_display})"
+    return "\n".join([fixed_header, ""] + lines)
+
+def normalize_part_header(markdown_text, _part_title):
+    """파트 제목 제거: 본문 헤더만 유지"""
+    markdown_text = normalize_section_headings(markdown_text)
+    lines = markdown_text.splitlines()
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    if lines and lines[0].lstrip().startswith("#"):
+        lines.pop(0)
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    return "\n".join(lines)
 
 def markdown_to_docx_converter(markdown_text, output_path, company_name, ticker):
     """留덊겕?ㅼ슫??DOCX濡?蹂??(H4 諛??쒕툕 ?뱀뀡 吏??媛뺥솕)"""
@@ -540,6 +910,25 @@ def markdown_to_docx_converter(markdown_text, output_path, company_name, ticker)
         _create_table(doc, table_rows)
     
     doc.save(output_path)
+
+def _validate_report_output(markdown_text: str) -> None:
+    """Validate report output for mandatory rules."""
+    normalized = _normalize_text(markdown_text)
+    if re.search(r"제\s*\d+\s*부", normalized):
+        raise ValueError("Report output contains forbidden part labels (제N부).")
+
+    table_ok = False
+    for line in normalized.splitlines():
+        if line.strip().startswith("| 구분 |") or line.strip().startswith("| 지표 |"):
+            # Count columns between pipes
+            cols = [c for c in line.split("|") if c.strip()]
+            # Expect at least 4 columns: label + 3 years
+            if len(cols) >= 4:
+                table_ok = True
+            else:
+                raise ValueError("Financial table has fewer than 3 years.")
+    if not table_ok:
+        raise ValueError("Financial tables not found in report output.")
 
 def _process_line(doc, line):
     """Helper to process normal lines, bullets, etc."""

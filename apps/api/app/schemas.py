@@ -46,3 +46,8 @@ class WatchlistCreate(BaseModel):
 
 class WatchlistItemAdd(BaseModel):
     ticker: str
+    name: str | None = None
+
+
+class WatchlistItemNoteUpdate(BaseModel):
+    note: str

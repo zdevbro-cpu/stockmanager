@@ -40,6 +40,35 @@ def _ensure_ingest_run_log(db: Session) -> None:
     """))
     db.commit()
 
+def _resolve_corp_code(db: Session, company_id: int) -> str | None:
+    row = db.execute(
+        text("SELECT corp_code, stock_code, name_ko FROM company WHERE company_id = :cid"),
+        {"cid": company_id},
+    ).fetchone()
+    if not row:
+        return None
+    corp_code, stock_code, name_ko = row
+    if corp_code:
+        return corp_code
+    if stock_code:
+        if stock_code.endswith("5"):
+            base_code = f"{stock_code[:-1]}0"
+            base = db.execute(
+                text("SELECT corp_code FROM company WHERE stock_code = :sc AND corp_code IS NOT NULL"),
+                {"sc": base_code},
+            ).fetchone()
+            if base and base[0]:
+                return base[0]
+    if name_ko and name_ko.endswith("우"):
+        base_name = name_ko[:-1]
+        base = db.execute(
+            text("SELECT corp_code FROM company WHERE name_ko = :name AND corp_code IS NOT NULL"),
+            {"name": base_name},
+        ).fetchone()
+        if base and base[0]:
+            return base[0]
+    return None
+
 
 from fastapi import Response
 
@@ -87,24 +116,35 @@ def get_report_content(report_id: int, db: Session = Depends(get_db)):
         with open(md_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        if "부록: 최근 3년 공시 목록" not in content:
-            corp_row = db.execute(
-                text("SELECT corp_code FROM company WHERE company_id = :cid"),
-                {"cid": company_id},
-            ).fetchone()
-            corp_code = corp_row[0] if corp_row else None
+        if "부록: 최근 공시 50건" not in content:
+            corp_code = _resolve_corp_code(db, company_id)
             if corp_code:
                 dart_rows = db.execute(
                     text("""
                         SELECT filing_date, filing_type, title, rcp_no
                         FROM dart_filing
                         WHERE corp_code = :cc
-                          AND filing_date >= CURRENT_DATE - INTERVAL '1095 days'
                         ORDER BY filing_date DESC
                         LIMIT 50
                     """),
                     {"cc": corp_code},
                 ).fetchall()
+                if not dart_rows:
+                    try:
+                        from ingest.dart_loader import fetch_and_save_dart_filings_for_corp
+                        fetch_and_save_dart_filings_for_corp(corp_code, days=1095)
+                        dart_rows = db.execute(
+                            text("""
+                                SELECT filing_date, filing_type, title, rcp_no
+                                FROM dart_filing
+                                WHERE corp_code = :cc
+                                ORDER BY filing_date DESC
+                                LIMIT 50
+                            """),
+                            {"cc": corp_code},
+                        ).fetchall()
+                    except Exception as exc:
+                        print(f"DART filings fetch failed: {exc}")
                 if dart_rows:
                     lines = []
                     for row in dart_rows:
@@ -113,9 +153,9 @@ def get_report_content(report_id: int, db: Session = Depends(get_db)):
                         title = row.title or "-"
                         rcp_no = row.rcp_no or "-"
                         lines.append(f"- {filing_date} [{filing_type}] {title} (rcp_no: {rcp_no})")
-                    appendix = "## 부록: 최근 3년 공시 목록\n" + "\n".join(lines)
+                    appendix = f"## 부록: 최근 공시 50건\n" + "\n".join(lines)
                 else:
-                    appendix = "## 부록: 최근 3년 공시 목록\n공시 데이터가 없습니다."
+                    appendix = "## 부록: 최근 공시 50건\n공시 데이터가 없습니다."
                 content = f"{content}\n\n{appendix}"
 
         return {"id": report_id, "status": status, "company_id": company_id, "content": content, "format": "markdown"}
@@ -233,13 +273,14 @@ def create_report(req: ReportRequestCreate, background_tasks: BackgroundTasks, _
 @router.post("/reports/dart-backfill")
 def trigger_dart_backfill(company_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     row = db.execute(
-        text("SELECT corp_code, name_ko FROM company WHERE company_id = :cid"),
+        text("SELECT name_ko FROM company WHERE company_id = :cid"),
         {"cid": company_id},
     ).fetchone()
-    if not row or not row[0]:
+    corp_code = _resolve_corp_code(db, company_id)
+    if not row or not corp_code:
         raise HTTPException(status_code=404, detail="corp_code not found for company")
 
-    corp_code, name_ko = row
+    name_ko = row[0]
     job_id = f"dart_backfill:{corp_code}"
     _ensure_ingest_run_log(db)
     run_id = db.execute(
@@ -296,14 +337,9 @@ def trigger_dart_backfill(company_id: int, background_tasks: BackgroundTasks, db
 
 @router.get("/reports/dart-backfill/status")
 def get_dart_backfill_status(company_id: int, db: Session = Depends(get_db)):
-    row = db.execute(
-        text("SELECT corp_code FROM company WHERE company_id = :cid"),
-        {"cid": company_id},
-    ).fetchone()
-    if not row or not row[0]:
+    corp_code = _resolve_corp_code(db, company_id)
+    if not corp_code:
         raise HTTPException(status_code=404, detail="corp_code not found for company")
-
-    corp_code = row[0]
     job_id = f"dart_backfill:{corp_code}"
     _ensure_ingest_run_log(db)
     last_run = db.execute(

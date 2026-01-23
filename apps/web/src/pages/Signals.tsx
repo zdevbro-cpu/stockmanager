@@ -120,7 +120,7 @@ export default function Signals() {
                                     <tr key={i} className="hover:bg-white/5 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-white font-bold">{signal.name}</span>
+                                                <span className="text-white font-bold">{signal.name || signal.ticker}</span>
                                                 <span className="text-xs text-text-subtle">{signal.ticker}</span>
                                             </div>
                                         </td>
