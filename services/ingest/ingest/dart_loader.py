@@ -127,7 +127,7 @@ def fetch_and_save_dart_filings(days: int = 180, progress_cb=None):
             db.close()
 
 
-def fetch_and_save_dart_filings_for_corp(corp_code: str, days: int = 1095) -> int:
+def fetch_and_save_dart_filings_for_corp(corp_code: str, days: int = 1095, progress_cb=None) -> int:
     """
     Fetch filings for a specific company from OpenDART across a given window.
     Returns processed count.
@@ -145,7 +145,10 @@ def fetch_and_save_dart_filings_for_corp(corp_code: str, days: int = 1095) -> in
             end_de = date.today().strftime("%Y%m%d")
             url = "https://opendart.fss.or.kr/api/list.json"
             count = 0
+            total_count = None
+            max_pages = None
             page_no = 1
+            page_count = 100
 
             session = _get_dart_session()
             while True:
@@ -154,7 +157,7 @@ def fetch_and_save_dart_filings_for_corp(corp_code: str, days: int = 1095) -> in
                     "corp_code": corp_code,
                     "bgn_de": bgn_de,
                     "end_de": end_de,
-                    "page_count": 100,
+                    "page_count": page_count,
                     "page_no": page_no,
                 }
 
@@ -170,6 +173,18 @@ def fetch_and_save_dart_filings_for_corp(corp_code: str, days: int = 1095) -> in
                     break
 
                 list_data = data.get("list", [])
+                if page_no == 1:
+                    raw_total = data.get("total_count", None)
+                    try:
+                        total_count = int(str(raw_total).replace(",", "")) if raw_total is not None else None
+                    except (TypeError, ValueError):
+                        total_count = None
+                    if total_count is not None and total_count > 0:
+                        max_pages = (total_count + page_count - 1) // page_count
+                    elif total_count == 0:
+                        if progress_cb:
+                            progress_cb(0, 0)
+                        break
                 if not list_data:
                     break
 
@@ -193,10 +208,18 @@ def fetch_and_save_dart_filings_for_corp(corp_code: str, days: int = 1095) -> in
                     count += 1
 
                 db.commit()
+                if total_count is not None and count > total_count:
+                    count = total_count
+                if progress_cb:
+                    progress_cb(count, total_count)
                 page_no += 1
+                if max_pages is not None and page_no > max_pages:
+                    break
                 time.sleep(0.2)
 
             print(f"Finished DART Filings Backfill for {corp_code}. Count={count}")
+            if progress_cb:
+                progress_cb(count, total_count)
             return count
         except Exception as e:
             print(f"DART Backfill Failed: {e}")

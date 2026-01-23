@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+﻿from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import datetime
@@ -25,6 +25,7 @@ def _ensure_ingest_run_log(db: Session) -> None:
           started_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
           finished_at TIMESTAMPTZ,
           row_count   INTEGER,
+          total_count INTEGER,
           message     TEXT,
           created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
         )
@@ -32,6 +33,10 @@ def _ensure_ingest_run_log(db: Session) -> None:
     db.execute(text("""
         CREATE INDEX IF NOT EXISTS idx_ingest_run_log_job_started
         ON ingest_run_log(job_id, started_at DESC)
+    """))
+    db.execute(text("""
+        ALTER TABLE ingest_run_log
+        ADD COLUMN IF NOT EXISTS total_count INTEGER
     """))
     db.commit()
 
@@ -70,7 +75,7 @@ def get_report_content(report_id: int, db: Session = Depends(get_db)):
     
     company_id, status = row
     if status != 'DONE':
-        return {"id": report_id, "status": status, "company_id": company_id, "content": f"보고서 생성 중입니다... (현재 상태: {status})"}
+        return {"id": report_id, "status": status, "company_id": company_id, "content": f"蹂닿퀬???앹꽦 以묒엯?덈떎... (?꾩옱 ?곹깭: {status})"}
 
     import os
     # Use absolute path to project root
@@ -81,6 +86,38 @@ def get_report_content(report_id: int, db: Session = Depends(get_db)):
     if os.path.exists(md_path):
         with open(md_path, "r", encoding="utf-8") as f:
             content = f.read()
+
+        if "부록: 최근 3년 공시 목록" not in content:
+            corp_row = db.execute(
+                text("SELECT corp_code FROM company WHERE company_id = :cid"),
+                {"cid": company_id},
+            ).fetchone()
+            corp_code = corp_row[0] if corp_row else None
+            if corp_code:
+                dart_rows = db.execute(
+                    text("""
+                        SELECT filing_date, filing_type, title, rcp_no
+                        FROM dart_filing
+                        WHERE corp_code = :cc
+                          AND filing_date >= CURRENT_DATE - INTERVAL '1095 days'
+                        ORDER BY filing_date DESC
+                        LIMIT 50
+                    """),
+                    {"cc": corp_code},
+                ).fetchall()
+                if dart_rows:
+                    lines = []
+                    for row in dart_rows:
+                        filing_date = str(row.filing_date) if row.filing_date else "-"
+                        filing_type = row.filing_type or "-"
+                        title = row.title or "-"
+                        rcp_no = row.rcp_no or "-"
+                        lines.append(f"- {filing_date} [{filing_type}] {title} (rcp_no: {rcp_no})")
+                    appendix = "## 부록: 최근 3년 공시 목록\n" + "\n".join(lines)
+                else:
+                    appendix = "## 부록: 최근 3년 공시 목록\n공시 데이터가 없습니다."
+                content = f"{content}\n\n{appendix}"
+
         return {"id": report_id, "status": status, "company_id": company_id, "content": content, "format": "markdown"}
     
     # Fallback: Check for DOCX file
@@ -90,11 +127,11 @@ def get_report_content(report_id: int, db: Session = Depends(get_db)):
             "id": report_id, 
             "status": status, 
             "company_id": company_id, 
-            "content": "# 보고서 미리보기 불가\n\n이 보고서는 다운로드 전용 형식(DOCX)으로 생성되었습니다.\n\n우측 상단의 **다운로드 버튼**을 클릭하여 확인하세요.",
+            "content": "# 蹂닿퀬??誘몃━蹂닿린 遺덇?\n\n??蹂닿퀬?쒕뒗 ?ㅼ슫濡쒕뱶 ?꾩슜 ?뺤떇(DOCX)?쇰줈 ?앹꽦?섏뿀?듬땲??\n\n?곗륫 ?곷떒??**?ㅼ슫濡쒕뱶 踰꾪듉**???대┃?섏뿬 ?뺤씤?섏꽭??",
             "format": "docx"
         }
     
-    return {"id": report_id, "status": status, "company_id": company_id, "content": "보고서 파일이 서버에 존재하지 않습니다.", "format": "none"}
+    return {"id": report_id, "status": status, "company_id": company_id, "content": "蹂닿퀬???뚯씪???쒕쾭??議댁옱?섏? ?딆뒿?덈떎.", "format": "none"}
 
 @router.get("/reports/{report_id}/download")
 def download_report(report_id: int, db: Session = Depends(get_db)):
@@ -218,8 +255,19 @@ def trigger_dart_backfill(company_id: int, background_tasks: BackgroundTasks, db
     def run_task():
         from ingest.dart_loader import fetch_and_save_dart_filings_for_corp
         from ..db import SessionLocal
+        def update_progress(processed: int, total: int | None):
+            with SessionLocal() as task_db:
+                task_db.execute(
+                    text("""
+                        UPDATE ingest_run_log
+                        SET row_count = :processed, total_count = :total
+                        WHERE run_id = :run_id
+                    """),
+                    {"processed": processed, "total": total, "run_id": run_id},
+                )
+                task_db.commit()
         try:
-            count = fetch_and_save_dart_filings_for_corp(corp_code, days=1095)
+            count = fetch_and_save_dart_filings_for_corp(corp_code, days=1095, progress_cb=update_progress)
             with SessionLocal() as task_db:
                 task_db.execute(
                     text("""
@@ -260,7 +308,7 @@ def get_dart_backfill_status(company_id: int, db: Session = Depends(get_db)):
     _ensure_ingest_run_log(db)
     last_run = db.execute(
         text("""
-            SELECT status, started_at, finished_at, message, row_count
+            SELECT status, started_at, finished_at, message, row_count, total_count
             FROM ingest_run_log
             WHERE job_id = :job_id
             ORDER BY started_at DESC
@@ -271,12 +319,34 @@ def get_dart_backfill_status(company_id: int, db: Session = Depends(get_db)):
     if not last_run:
         return {"status": "IDLE", "job_id": job_id}
 
-    status, started_at, finished_at, message, row_count = last_run
+    status, started_at, finished_at, message, row_count, total_count = last_run
+    if status == "RUNNING" and started_at and finished_at is None:
+        now = datetime.datetime.now(started_at.tzinfo)
+        if now - started_at > datetime.timedelta(minutes=30):
+            message = "?묒뾽??30遺??댁긽 吏?띾릺??以묒???寃껋쑝濡??먮떒?섏뿀?듬땲??"
+            db.execute(
+                text("""
+                    UPDATE ingest_run_log
+                    SET status = 'FAILED', message = :msg, finished_at = :finished_at
+                    WHERE job_id = :job_id AND started_at = :started_at
+                """),
+                {
+                    "msg": message,
+                    "finished_at": now,
+                    "job_id": job_id,
+                    "started_at": started_at,
+                },
+            )
+            db.commit()
+            status = "FAILED"
+            finished_at = now
     return {
         "status": status,
         "job_id": job_id,
         "started_at": started_at.isoformat() if started_at else None,
         "finished_at": finished_at.isoformat() if finished_at else None,
         "message": message,
-        "row_count": row_count,
+        "processed": row_count,
+        "total": total_count,
     }
+

@@ -65,6 +65,7 @@ def generate_ai_report(company_id: int, report_id: int):
             return
         
         name = company[0]
+        corp_code = company[1]
         ticker = company[2] or "N/A"
         sector = company[3] or "Technology"
         
@@ -136,6 +137,65 @@ def generate_ai_report(company_id: int, report_id: int):
                 'debt_ratio': _to_float(row.debt_ratio),
             }
 
+        data_note = ''
+
+        if not summary_by_year and corp_code:
+            fs_rows = db.execute(text("""
+                SELECT period_end, item_name, value, consolidated_flag
+                FROM financial_statement
+                WHERE corp_code = :cc
+                ORDER BY period_end DESC, consolidated_flag DESC
+            """), {"cc": corp_code}).fetchall()
+
+            fs_by_year: dict[int, list] = {}
+            for row in fs_rows:
+                if not row.period_end:
+                    continue
+                year = row.period_end.year
+                fs_by_year.setdefault(year, []).append(row)
+
+            def _pick_value(items, keywords):
+                for item in items:
+                    name = str(item.item_name or '')
+                    for key in keywords:
+                        if key in name:
+                            return _to_float(item.value)
+                return None
+
+            revenue_keys = ["매출", "영업수익", "수익(매출액)"]
+            op_income_keys = ["영업이익"]
+            net_income_keys = ["당기순이익", "순이익"]
+            assets_keys = ["자산총계", "총자산"]
+            equity_keys = ["자본총계", "총자본", "자기자본"]
+
+            for year in sorted(fs_by_year.keys(), reverse=True)[:3]:
+                rows = fs_by_year[year]
+                consolidated_rows = [r for r in rows if r.consolidated_flag]
+                target_rows = consolidated_rows or rows
+
+                summary_by_year[year] = {
+                    'revenue': _pick_value(target_rows, revenue_keys),
+                    'op_income': _pick_value(target_rows, op_income_keys),
+                    'net_income': _pick_value(target_rows, net_income_keys),
+                    'assets': _pick_value(target_rows, assets_keys),
+                    'equity': _pick_value(target_rows, equity_keys),
+                }
+
+            data_note = 'DART 재무 데이터 기준으로 작성되었습니다.'
+
+        if not ratio_by_year and summary_by_year:
+            for year, summary in summary_by_year.items():
+                revenue = summary.get('revenue')
+                op_income = summary.get('op_income')
+                net_income = summary.get('net_income')
+                assets = summary.get('assets')
+                equity = summary.get('equity')
+                ratio_by_year[year] = {
+                    'op_margin': (op_income / revenue * 100) if revenue else None,
+                    'roe': (net_income / equity * 100) if equity else None,
+                    'debt_ratio': ((assets - equity) / equity * 100) if assets is not None and equity else None,
+                }
+
         years = sorted(set(summary_by_year.keys()) | set(ratio_by_year.keys()), reverse=True)[:3]
         if not years:
             current_year = datetime.date.today().year
@@ -164,7 +224,28 @@ def generate_ai_report(company_id: int, report_id: int):
         ratio_table = _build_table(['지표'] + [f'{y}년' for y in years], ratio_rows)
 
         has_fin_data = bool(summary_by_year or ratio_by_year)
-        data_note = '' if has_fin_data else '재무 데이터가 부족하여 일부 항목은 - 로 표시됩니다.'
+        if not has_fin_data:
+            data_note = '재무 데이터가 부족하여 일부 항목은 - 로 표시됩니다.'
+
+        dart_filings_md = "## 부록: 최근 3년 공시 목록\n공시 데이터가 없습니다."
+        if corp_code:
+            dart_rows = db.execute(text("""
+                SELECT filing_date, filing_type, title, rcp_no
+                FROM dart_filing
+                WHERE corp_code = :cc
+                  AND filing_date >= CURRENT_DATE - INTERVAL '1095 days'
+                ORDER BY filing_date DESC
+                LIMIT 50
+            """), {"cc": corp_code}).fetchall()
+            if dart_rows:
+                lines = []
+                for row in dart_rows:
+                    filing_date = str(row.filing_date) if row.filing_date else "-"
+                    filing_type = row.filing_type or "-"
+                    title = row.title or "-"
+                    rcp_no = row.rcp_no or "-"
+                    lines.append(f"- {filing_date} [{filing_type}] {title} (rcp_no: {rcp_no})")
+                dart_filings_md = "## 부록: 최근 3년 공시 목록\n" + "\n".join(lines)
         
 
         # --- PART 1: Intro & Financials ---
@@ -327,7 +408,7 @@ def generate_ai_report(company_id: int, report_id: int):
         part4 = clean_markdown(resp4.text)
 
         # Combine all parts
-        full_report = f"{part1}\n\n{part2}\n\n{part3}\n\n{part4}"
+        full_report = f"{part1}\n\n{part2}\n\n{part3}\n\n{part4}\n\n{dart_filings_md}"
         
         # 4. Save as Markdown
         root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))

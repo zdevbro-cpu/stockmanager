@@ -32,7 +32,12 @@ def _parse_dart_date(value: str | None) -> datetime | None:
     except ValueError:
         return None
 
-def fetch_and_save_company_financials(limit_companies: int | None = None, progress_cb=None):
+def fetch_and_save_company_financials(
+    limit_companies: int | None = None,
+    progress_cb=None,
+    corp_codes: list[str] | None = None,
+    years: list[int] | None = None,
+):
     """
     Fetch major financial indicators (Revenue, Operating Profit, etc.) 
     for companies from OpenDART and save to 'financial_statement' table.
@@ -48,7 +53,12 @@ def fetch_and_save_company_financials(limit_companies: int | None = None, progre
     with SessionLocal() as db:
         try:
             # 1. Get companies with corp_code
-            if limit_companies is None:
+            if corp_codes:
+                stmt = text(
+                    "SELECT corp_code, name_ko FROM company WHERE corp_code = ANY(:codes)"
+                )
+                companies = db.execute(stmt, {"codes": corp_codes}).fetchall()
+            elif limit_companies is None:
                 stmt = text("SELECT corp_code, name_ko FROM company WHERE corp_code IS NOT NULL")
                 companies = db.execute(stmt).fetchall()
             else:
@@ -57,7 +67,9 @@ def fetch_and_save_company_financials(limit_companies: int | None = None, progre
             if not companies:
                 print("No corp_code found. Syncing corp_codes from DART...", flush=True)
                 sync_dart_corp_codes()
-                if limit_companies is None:
+                if corp_codes:
+                    companies = db.execute(stmt, {"codes": corp_codes}).fetchall()
+                elif limit_companies is None:
                     companies = db.execute(stmt).fetchall()
                 else:
                     companies = db.execute(stmt, {"l": limit_companies}).fetchall()
@@ -66,9 +78,11 @@ def fetch_and_save_company_financials(limit_companies: int | None = None, progre
                     return
             
             # Reprt codes: 11011(Annual), 11012(Half), 11013(Q1), 11014(Q3)
-            # For now, let's fetch 2023 Annual Report (11011) as a base.
-            bsns_year = "2023"
             reprt_code = "11011"
+            if years is None:
+                # Annual reports are typically finalized the following year.
+                latest_year = date.today().year - 2
+                years = [latest_year - i for i in range(3)]
             
             count = 0
             total = len(companies)
@@ -78,71 +92,72 @@ def fetch_and_save_company_financials(limit_companies: int | None = None, progre
             for corp_code, name in companies:
                 print(f"Fetching financials for {name} ({corp_code})...", flush=True)
                 
-                url = "https://opendart.fss.or.kr/api/fnlttSinglAcnt.json"
-                params = {
-                    "crtfc_key": api_key,
-                    "corp_code": corp_code,
-                    "bsns_year": bsns_year,
-                    "reprt_code": reprt_code
-                }
-                
-                try:
-                    resp = session.get(url, params=params, timeout=30)
-                except requests.exceptions.RequestException as re:
-                     print(f"Skipping {name}: Request Failed {re}", flush=True)
-                     time.sleep(0.5)
-                     continue
-                data = resp.json()
-                
-                if resp.status_code == 200 and data.get("status") == "000":
-                    list_data = data.get("list", [])
-                    for item in list_data:
-                        # item keys: account_nm, thstrm_amount, fs_div, fs_nm, etc.
-                        # value is usually a string with commas
-                        val_str = item.get('thstrm_amount', '0').replace(',', '')
-                        try:
-                            val = float(val_str) if val_str and val_str != '-' else 0
-                        except ValueError:
-                            val = 0
-                            
-                        # fs_div: CFS (Consolidated), OFS (Separate)
-                        is_consolidated = (item.get('fs_div') == 'CFS')
-                        announced_at = (
-                            _parse_dart_date(item.get("rcept_dt"))
-                            or _parse_dart_date(item.get("thstrm_dt"))
-                        )
-                        
-                        stmt_upsert = text("""
-                            INSERT INTO financial_statement 
-                            (corp_code, period_end, announced_at, item_code, item_name, value, unit, consolidated_flag, created_at)
-                            VALUES (:cc, :pe, :ann, :icode, :iname, :v, :u, :cf, NOW())
-                            ON CONFLICT (corp_code, period_end, item_code, announced_at) 
-                            DO UPDATE SET value = EXCLUDED.value, item_name = EXCLUDED.item_name
-                        """)
-                        
-                        # period_end is approximate for 2023 annual report
-                        p_end = date(int(bsns_year), 12, 31)
-                        
-                        db.execute(stmt_upsert, {
-                            "cc": corp_code,
-                            "pe": p_end,
-                            "ann": announced_at or datetime.combine(p_end, datetime.min.time()),
-                            "icode": item.get('account_id', item.get('account_nm')),
-                            "iname": item.get('account_nm'),
-                            "v": val,
-                            "u": "KRW",
-                            "cf": is_consolidated
-                        })
-                    
-                    count += 1
-                    db.commit()
-                    print(f"Saved financials for {name}", flush=True)
-                else:
-                    print(f"Skipping {name}: {data.get('message')}", flush=True)
-                if progress_cb:
-                    progress_cb(count, total)
-                
-                time.sleep(0.2)
+                for bsns_year in years:
+                    url = "https://opendart.fss.or.kr/api/fnlttSinglAcnt.json"
+                    params = {
+                        "crtfc_key": api_key,
+                        "corp_code": corp_code,
+                        "bsns_year": str(bsns_year),
+                        "reprt_code": reprt_code,
+                    }
+
+                    try:
+                        resp = session.get(url, params=params, timeout=30)
+                    except requests.exceptions.RequestException as re:
+                        print(f"Skipping {name}({bsns_year}): Request Failed {re}", flush=True)
+                        time.sleep(0.5)
+                        continue
+                    data = resp.json()
+
+                    if resp.status_code == 200 and data.get("status") == "000":
+                        list_data = data.get("list", [])
+                        for item in list_data:
+                            # item keys: account_nm, thstrm_amount, fs_div, fs_nm, etc.
+                            # value is usually a string with commas
+                            val_str = item.get('thstrm_amount', '0').replace(',', '')
+                            try:
+                                val = float(val_str) if val_str and val_str != '-' else 0
+                            except ValueError:
+                                val = 0
+
+                            # fs_div: CFS (Consolidated), OFS (Separate)
+                            is_consolidated = (item.get('fs_div') == 'CFS')
+                            announced_at = (
+                                _parse_dart_date(item.get("rcept_dt"))
+                                or _parse_dart_date(item.get("thstrm_dt"))
+                            )
+
+                            stmt_upsert = text("""
+                                INSERT INTO financial_statement 
+                                (corp_code, period_end, announced_at, item_code, item_name, value, unit, consolidated_flag, created_at)
+                                VALUES (:cc, :pe, :ann, :icode, :iname, :v, :u, :cf, NOW())
+                                ON CONFLICT (corp_code, period_end, item_code, announced_at) 
+                                DO UPDATE SET value = EXCLUDED.value, item_name = EXCLUDED.item_name
+                            """)
+
+                            p_end = date(int(bsns_year), 12, 31)
+
+                            db.execute(stmt_upsert, {
+                                "cc": corp_code,
+                                "pe": p_end,
+                                "ann": announced_at or datetime.combine(p_end, datetime.min.time()),
+                                "icode": item.get('account_id', item.get('account_nm')),
+                                "iname": item.get('account_nm'),
+                                "v": val,
+                                "u": "KRW",
+                                "cf": is_consolidated,
+                            })
+
+                        count += 1
+                        db.commit()
+                        print(f"Saved financials for {name} ({bsns_year})", flush=True)
+                    else:
+                        print(f"Skipping {name}({bsns_year}): {data.get('message')}", flush=True)
+
+                    if progress_cb:
+                        progress_cb(count, total)
+
+                    time.sleep(0.2)
                 
             print(f"Finished. Processed {count} companies.", flush=True)
             

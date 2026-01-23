@@ -150,12 +150,38 @@ export default function Reports() {
         try {
             const client = createApiClient(apiBaseUrl);
             const resp = await client.post(`/reports/dart-backfill?company_id=${targetCompanyId}`);
-            setDartBackfill({ status: 'RUNNING', ...resp.data });
+            setDartBackfill({ ...resp.data, status: 'RUNNING' });
         } catch (error) {
             console.error("Failed to trigger DART backfill", error);
             setIsBackfilling(false);
         }
     };
+
+    const renderBackfillStatus = () => {
+        if (!dartBackfill?.status) return null;
+        const statusLabel = dartBackfill.status === 'RUNNING'
+            ? '진행 중'
+            : dartBackfill.status === 'SUCCESS'
+                ? '완료'
+                : dartBackfill.status === 'FAILED'
+                    ? '실패'
+                    : dartBackfill.status;
+        const processed = dartBackfill.processed ?? dartBackfill.row_count ?? null;
+        const total = dartBackfill.total ?? dartBackfill.total_count ?? null;
+        const finishedAt = dartBackfill.finished_at ? new Date(dartBackfill.finished_at).toLocaleString() : null;
+        const message = dartBackfill.message ? String(dartBackfill.message) : null;
+
+        return (
+            <div className="text-xs text-text-subtle">
+                <div>상태: {statusLabel}</div>
+                <div>진행완료건수/총건수: {processed ?? '-'} / {total ?? '-'}</div>
+                {finishedAt && <div>완료 시각: {finishedAt}</div>}
+                {message && <div>메시지: {message}</div>}
+            </div>
+        );
+    };
+
+    const backfillStatus = renderBackfillStatus();
 
     const fetchReports = async () => {
         try {
@@ -589,30 +615,31 @@ export default function Reports() {
                                 <div className="mt-4">
                                     <DocumentManager companyId={targetCompanyId} />
                                 </div>
-                                <div className="mt-4 flex items-center gap-3">
-                                    <button
-                                        onClick={handleDartBackfill}
-                                        disabled={!targetCompanyId || isBackfilling}
-                                        className={clsx(
-                                            "px-4 py-2 rounded-lg text-xs font-bold transition-colors",
-                                            (!targetCompanyId || isBackfilling)
-                                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                                                : "bg-primary text-white hover:bg-blue-600"
-                                        )}
-                                    >
-                                        {isBackfilling ? (
-                                            <span className="flex items-center gap-2">
-                                                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                                怨듭떆 3???뺤옣 以?..
-                                            </span>
-                                        ) : '怨듭떆 3???뺤옣'}
-                                    </button>
-                                    {dartBackfill?.status && (
-                                        <span className="text-xs text-text-subtle">
-                                            ?곹깭: {dartBackfill.status}
-                                            {dartBackfill.row_count ? ` / ${dartBackfill.row_count}嫄? : ''}
-                                        </span>
+                                <div className="mt-4">
+                                    {backfillStatus && (
+                                        <div className="mb-2">
+                                            {backfillStatus}
+                                        </div>
                                     )}
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={handleDartBackfill}
+                                            disabled={!targetCompanyId || isBackfilling}
+                                            className={clsx(
+                                                "px-4 py-2 rounded-lg text-xs font-bold transition-colors",
+                                                (!targetCompanyId || isBackfilling)
+                                                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                                    : "bg-primary text-white hover:bg-blue-600"
+                                            )}
+                                        >
+                                            {isBackfilling ? (
+                                                <span className="flex items-center gap-2">
+                                                    <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                                    공시 3년치 적재 중...
+                                                </span>
+                                            ) : '공시 3년치 적재'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
