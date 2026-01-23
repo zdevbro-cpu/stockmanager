@@ -1,7 +1,12 @@
 {
-  "status": "RUNNING",
-  "as_of_date": "2026-01-15",
-  "strategy_id": "prod_v1",
+  "as_of_date": "2026-01-23",
+  "strategy_id": "momentum_short",
   "strategy_version": "1.0",
-  "top_n": 5
+  "universe_total": 2788,
+  "after_min_price": 141,
+  "after_min_turnover": 10,
+  "after_indicators": 10,
+  "final_top_n": 10,
+  "fallback_used": false,
+  "status": "SUCCESS"
 }

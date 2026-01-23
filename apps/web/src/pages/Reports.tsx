@@ -102,6 +102,7 @@ export default function Reports() {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [targetCompanyId, setTargetCompanyId] = useState('');
     const [selectedCompanyName, setSelectedCompanyName] = useState('');
+    const [selectedCompanyCode, setSelectedCompanyCode] = useState('');
     const [template, setTemplate] = useState('investment_memo_vc_v1');
     const [isSearching, setIsSearching] = useState(false);
     const [dartBackfill, setDartBackfill] = useState<any>(null);
@@ -128,6 +129,7 @@ export default function Reports() {
     const handleSelectCompany = (c: any) => {
         setTargetCompanyId(c.id.toString());
         setSelectedCompanyName(c.name);
+        setSelectedCompanyCode(c.ticker || c.code || c.stock_code || '');
         setSearchTerm(c.name);
         setSearchResults([]);
     };
@@ -171,17 +173,20 @@ export default function Reports() {
         const finishedAt = dartBackfill.finished_at ? new Date(dartBackfill.finished_at).toLocaleString() : null;
         const message = dartBackfill.message ? String(dartBackfill.message) : null;
 
-        return (
-            <div className="text-xs text-text-subtle">
-                <div>상태: {statusLabel}</div>
-                <div>진행완료건수/총건수: {processed ?? '-'} / {total ?? '-'}</div>
-                {finishedAt && <div>완료 시각: {finishedAt}</div>}
-                {message && <div>메시지: {message}</div>}
-            </div>
-        );
+        return {
+            statusLabel,
+            processed,
+            total,
+            finishedAt,
+            message
+        };
     };
 
     const backfillStatus = renderBackfillStatus();
+    const isBackfillFinished = dartBackfill?.status === 'SUCCESS' || dartBackfill?.status === 'FAILED';
+    const backfillCountLabel = backfillStatus
+        ? `${backfillStatus.processed ?? '-'} / ${backfillStatus.total ?? '-'}`
+        : '- / -';
 
     const fetchReports = async () => {
         try {
@@ -610,18 +615,15 @@ export default function Reports() {
                                     )}
                                 </div>
                                 {targetCompanyId && (
-                                    <p className="text-xs text-primary font-bold mt-1">Selected: {selectedCompanyName} (ID: {targetCompanyId})</p>
+                                    <p className="text-xs text-primary font-bold mt-1">
+                                        선택 종목: {selectedCompanyName}({selectedCompanyCode || targetCompanyId})
+                                    </p>
                                 )}
                                 <div className="mt-4">
                                     <DocumentManager companyId={targetCompanyId} />
                                 </div>
                                 <div className="mt-4">
-                                    {backfillStatus && (
-                                        <div className="mb-2">
-                                            {backfillStatus}
-                                        </div>
-                                    )}
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-start gap-3">
                                         <button
                                             onClick={handleDartBackfill}
                                             disabled={!targetCompanyId || isBackfilling}
@@ -635,10 +637,20 @@ export default function Reports() {
                                             {isBackfilling ? (
                                                 <span className="flex items-center gap-2">
                                                     <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                                    공시 3년치 적재 중...
+                                                    공시 3년치 적재 중... ({backfillCountLabel})
                                                 </span>
-                                            ) : '공시 3년치 적재'}
+                                            ) : (
+                                                `공시 3년치 적재 (${backfillCountLabel})`
+                                            )}
                                         </button>
+                                        {isBackfillFinished && backfillStatus && (
+                                            <div className="text-xs text-text-subtle mt-1">
+                                                <div>상태: {backfillStatus.statusLabel}</div>
+                                                <div>진행완료건수/총건수: {backfillStatus.processed ?? '-'} / {backfillStatus.total ?? '-'}</div>
+                                                {backfillStatus.finishedAt && <div>완료 시각: {backfillStatus.finishedAt}</div>}
+                                                {backfillStatus.message && <div>메시지: {backfillStatus.message}</div>}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
