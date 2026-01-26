@@ -1,0 +1,11 @@
+Timestamp: 2026-01-23 16:27:35.643038
+Error: Insufficient DART financial years: 2 (need 3)
+Traceback (most recent call last):
+  File "C:\ProjectCode\stockmanager\apps\api\app\services\report_service.py", line 75, in generate_ai_report
+    ensure_financials_for_company(db, company_id, corp_code, ticker, name)
+  File "C:\ProjectCode\stockmanager\apps\api\app\services\report_service.py", line 769, in ensure_financials_for_company
+    latest_years = _ensure_latest_years(db, corp_code)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProjectCode\stockmanager\apps\api\app\services\report_service.py", line 703, in _ensure_latest_years
+    raise ValueError(f"Insufficient DART financial years: {len(years)} (need {required})")
+ValueError: Insufficient DART financial years: 2 (need 3)

@@ -10,11 +10,22 @@ import xml.etree.ElementTree as ET
 import urllib.parse
 import requests
 import unicodedata
+import concurrent.futures
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 
 # Import settings to get API key
 from ..config import settings
+
+def _append_report_log(report_id: int, message: str) -> None:
+    try:
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+        log_path = os.path.join(root_dir, "artifacts", "report_debug.log")
+        ts = datetime.datetime.now().isoformat()
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"{ts} | report_id={report_id} | {message}\n")
+    except Exception:
+        pass
 
 def fetch_google_news(query: str, limit: int | None = None) -> str:
     """Fetch recent news from Google News RSS"""
@@ -55,6 +66,10 @@ def generate_ai_report(company_id: int, report_id: int):
     db = SessionLocal()
     
     try:
+        _append_report_log(report_id, "start")
+        version_tag = "report_service_version=2026-01-23-1900"
+        print(version_tag)
+        _append_report_log(report_id, version_tag)
         # 1. Fetch Company Info
         company = db.execute(text("SELECT name_ko, corp_code, stock_code, sector_name FROM company WHERE company_id = :cid"), 
                              {"cid": company_id}).fetchone()
@@ -70,18 +85,37 @@ def generate_ai_report(company_id: int, report_id: int):
         ticker = company[2] or "N/A"
         sector = company[3] or "Technology"
 
-        # Ensure financial marts are populated for this company (DART on-demand)
-        ensure_financials_for_company(db, company_id, corp_code, ticker, name)
-        
-        # Update status to RUNNING
+        # Update status to RUNNING immediately
         db.execute(text("UPDATE report_request SET status = 'RUNNING' WHERE report_id = :rid"), {"rid": report_id})
         db.commit()
+
+        print(f"Starting report generation for {name} (ID: {report_id})...")
+        _append_report_log(report_id, "company_loaded")
+
+        # Ensure financial marts are populated for this company (DART on-demand)
+        print(f"Checking financials for {name}...")
+        def _ensure_financials_async():
+            try:
+                with SessionLocal() as fin_db:
+                    ensure_financials_for_company(fin_db, company_id, corp_code, ticker, name)
+            except Exception as e:
+                print(f"Warning: Financials check failed, proceeding with available data. Error: {e}")
+                _append_report_log(report_id, f"financials_failed:{e}")
+
+        try:
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            executor.submit(_ensure_financials_async)
+            executor.shutdown(wait=False, cancel_futures=False)
+        except Exception as e:
+            print(f"Warning: Financials async start failed: {e}")
+            _append_report_log(report_id, f"financials_async_start_failed:{e}")
         
-        print(f"Starting MODULAR report generation for {name}...")
-        
-        # 2. Fetch News (Increase limit)
-        news_summary = fetch_google_news(name, limit=None) 
+        print(f"Fetching news for {name}...")
+        _append_report_log(report_id, "news_fetch_start")
+        # 2. Fetch News (Limit to 15 for speed)
+        news_summary = fetch_google_news(name, limit=15) 
         today_str = datetime.date.today().strftime("%Y-%m-%d")
+        _append_report_log(report_id, "news_fetch_done")
         
         # 3. Setup AI
         api_key = settings.GOOGLE_API_KEY or os.environ.get("GOOGLE_API_KEY")
@@ -89,8 +123,10 @@ def generate_ai_report(company_id: int, report_id: int):
             raise ValueError("GOOGLE_API_KEY not configured")
         
         genai.configure(api_key=api_key)
-        model_id = 'models/gemini-2.0-flash'
+        # Use faster model for speed
+        model_id = os.environ.get("GEMINI_MODEL_ID", "models/gemini-2.0-flash")
         model = genai.GenerativeModel(model_id)
+        _append_report_log(report_id, f"model_ready:{model_id}")
         fin_summary_rows = db.execute(text("""
             SELECT fiscal_year, revenue, op_income, net_income, assets, equity
             FROM fs_mart_annual
@@ -166,26 +202,28 @@ def generate_ai_report(company_id: int, report_id: int):
                             return _to_float(item.value)
                 return None
 
-            revenue_keys = ["매출", "영업수익", "수익(매출액)"]
-            op_income_keys = ["영업이익"]
-            net_income_keys = ["당기순이익", "순이익"]
+            revenue_keys = ["매출", "영업수익", "수익(매출액)", "이자수익", "보험수익"]
+            op_income_keys = ["영업이익", "영업이익(손실)"]
+            net_income_keys = ["당기순이익", "당기순이익(손실)", "순이익"]
             assets_keys = ["자산총계", "총자산"]
             equity_keys = ["자본총계", "총자본", "자기자본"]
+
+            def _pick_with_fallback(rows_all, rows_consolidated, keys):
+                return _pick_value(rows_consolidated, keys) or _pick_value(rows_all, keys)
 
             for year in sorted(fs_by_year.keys(), reverse=True)[:3]:
                 rows = fs_by_year[year]
                 consolidated_rows = [r for r in rows if r.consolidated_flag]
-                target_rows = consolidated_rows or rows
 
                 if year not in summary_by_year:
                     summary_by_year[year] = {}
 
                 summary_by_year[year] = {
-                    'revenue': summary_by_year[year].get('revenue') or _pick_value(target_rows, revenue_keys),
-                    'op_income': summary_by_year[year].get('op_income') or _pick_value(target_rows, op_income_keys),
-                    'net_income': summary_by_year[year].get('net_income') or _pick_value(target_rows, net_income_keys),
-                    'assets': summary_by_year[year].get('assets') or _pick_value(target_rows, assets_keys),
-                    'equity': summary_by_year[year].get('equity') or _pick_value(target_rows, equity_keys),
+                    'revenue': summary_by_year[year].get('revenue') or _pick_with_fallback(rows, consolidated_rows, revenue_keys),
+                    'op_income': summary_by_year[year].get('op_income') or _pick_with_fallback(rows, consolidated_rows, op_income_keys),
+                    'net_income': summary_by_year[year].get('net_income') or _pick_with_fallback(rows, consolidated_rows, net_income_keys),
+                    'assets': summary_by_year[year].get('assets') or _pick_with_fallback(rows, consolidated_rows, assets_keys),
+                    'equity': summary_by_year[year].get('equity') or _pick_with_fallback(rows, consolidated_rows, equity_keys),
                 }
 
             if fs_by_year:
@@ -206,7 +244,13 @@ def generate_ai_report(company_id: int, report_id: int):
                     'debt_ratio': ratio_by_year[year].get('debt_ratio') or (((assets - equity) / equity * 100) if assets is not None and equity else None),
                 }
 
-        years = _ensure_latest_years(db, corp_code)
+        try:
+            years = _ensure_latest_years(db, corp_code)
+        except ValueError as exc:
+            print(f"Financial years fallback: {exc}")
+            years = _candidate_years()[:3]
+            if not data_note:
+                data_note = '재무 데이터가 부족하여 일부 항목은 - 로 표시됩니다.'
         for y in years:
             summary_by_year.setdefault(y, {})
             ratio_by_year.setdefault(y, {})
@@ -233,7 +277,16 @@ def generate_ai_report(company_id: int, report_id: int):
         ]
         ratio_table = _build_table(['지표'] + [f'{y}년' for y in years], ratio_rows)
 
-        has_fin_data = bool(summary_by_year or ratio_by_year)
+        def _has_fin_values():
+            for summary in summary_by_year.values():
+                if any(v is not None for v in summary.values()):
+                    return True
+            for ratio in ratio_by_year.values():
+                if any(v is not None for v in ratio.values()):
+                    return True
+            return False
+
+        has_fin_data = _has_fin_values()
         if not has_fin_data:
             data_note = '재무 데이터가 부족하여 일부 항목은 - 로 표시됩니다.'
 
@@ -257,8 +310,10 @@ def generate_ai_report(company_id: int, report_id: int):
                 dart_filings_md = "## 부록: 최근 공시 50건\n" + "\n".join(lines)
         
 
-        # --- PART 1: Intro & Financials ---
-        print("Generating Part 1 (Summary & Financials)...")
+        # --- Prepare Prompts ---
+        print("Preparing prompts for parallel generation...")
+        _append_report_log(report_id, "prompts_ready")
+        
         prompt1 = f"""
 당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **요약 및 재무**를 작성하십시오.
 정량/정성 분석을 포함한 전문적인 톤으로 작성하십시오.
@@ -293,16 +348,7 @@ def generate_ai_report(company_id: int, report_id: int):
 
 마크다운으로 작성하십시오.
 """
-        resp1 = model.generate_content(prompt1)
-        part1 = clean_markdown(resp1.text)
-        part1 = remove_part_labels(part1)
-        part1 = normalize_headings(part1)
-        part1 = normalize_report_header(part1, name, ticker)
-        part1 = _inject_financial_tables(part1, financial_table, ratio_table, data_note)
-        
-        # --- PART 2: Business Model ---
-        print("Generating Part 2 (Business Model)...")
-        time.sleep(1)
+
         prompt2 = f"""
 당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **사업 모델**을 작성하십시오.
 정량/정성 근거를 포함해 서술하십시오.
@@ -331,15 +377,7 @@ def generate_ai_report(company_id: int, report_id: int):
 
 마크다운으로 작성하십시오.
 """
-        resp2 = model.generate_content(prompt2)
-        part2 = remove_part_labels(clean_markdown(resp2.text))
-        part2 = normalize_headings(part2)
-        part2 = normalize_part_header(part2, "제2부 (사업 모델)")
-        part2 = ensure_heading(part2, "3. 사업 모델 및 경쟁 우위")
 
-        # --- PART 3: Risks, Opps, Ops ---
-        print("Generating Part 3 (Risks & Conclusion)...")
-        time.sleep(1)
         prompt3 = f"""
 당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **리스크/기회/결론**을 작성하십시오.
 정확하고 구체적인 항목으로 작성하십시오.
@@ -388,15 +426,7 @@ def generate_ai_report(company_id: int, report_id: int):
 
 마크다운으로 작성하십시오.
 """
-        resp3 = model.generate_content(prompt3)
-        part3 = remove_part_labels(clean_markdown(resp3.text))
-        part3 = normalize_headings(part3)
-        part3 = normalize_part_header(part3, "제3부 (리스크/기회/결론)")
-        part3 = ensure_heading(part3, "4. 리스크 및 기회 요인")
 
-        # --- PART 4: News Insights ---
-        print("Generating Part 4 (News Insights)...")
-        time.sleep(1)
         prompt4 = f"""
 당신은 VC 수석 심사역입니다. {name}({ticker}) 보고서의 **뉴스 인사이트**를 작성하십시오.
 최근 뉴스 기준으로 16개 항목을 정리하십시오.
@@ -427,15 +457,161 @@ def generate_ai_report(company_id: int, report_id: int):
 
 마크다운으로 작성하십시오.
 """
-        resp4 = model.generate_content(prompt4)
-        part4 = remove_part_labels(clean_markdown(resp4.text))
+
+        # --- Parallel Generation ---
+        print("Generating report parts in parallel...")
+        _append_report_log(report_id, "generation_start")
+        
+        genai_timeout_sec = int(os.environ.get("GENAI_TIMEOUT_SEC", "45"))
+
+        def _generate_part(prompt, timeout_sec: int | None = None):
+            try:
+                # Create a local model instance for thread safety if needed (though genai is stateless)
+                local_model = genai.GenerativeModel(model_id)
+                resp = local_model.generate_content(
+                    prompt,
+                    request_options={"timeout": timeout_sec or genai_timeout_sec},
+                )
+                return resp.text
+            except Exception as e:
+                print(f"Part generation failed: {e}")
+                _append_report_log(report_id, f"part_failed:{type(e).__name__}:{e}")
+                return ""
+
+        part_timeout_sec = int(os.environ.get("GENAI_PART_TIMEOUT_SEC", "60"))
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+        try:
+            future1 = executor.submit(_generate_part, prompt1)
+            future2 = executor.submit(_generate_part, prompt2)
+            future3 = executor.submit(_generate_part, prompt3)
+            future4 = executor.submit(_generate_part, prompt4)
+
+            futures = [future1, future2, future3, future4]
+            raw_parts = ["", "", "", ""]
+            for idx, fut in enumerate(futures):
+                try:
+                    raw_parts[idx] = fut.result(timeout=part_timeout_sec)
+                except concurrent.futures.TimeoutError:
+                    print(f"Part generation timed out after {part_timeout_sec}s (part {idx + 1})")
+                    fut.cancel()
+                except Exception as exc:
+                    print(f"Part generation failed: {exc}")
+                    raw_parts[idx] = ""
+
+            raw_part1, raw_part2, raw_part3, raw_part4 = raw_parts
+        finally:
+            executor.shutdown(wait=False, cancel_futures=True)
+
+        def _raw_len(text: str) -> int:
+            if not text:
+                return 0
+            return len(re.sub(r"\\s+", "", text))
+
+        raw_lengths = {
+            "part1": _raw_len(raw_part1),
+            "part2": _raw_len(raw_part2),
+            "part3": _raw_len(raw_part3),
+            "part4": _raw_len(raw_part4),
+        }
+        _append_report_log(report_id, f"raw_lengths:{raw_lengths}")
+
+        retry_threshold = 200
+        retry_targets = [k for k, v in raw_lengths.items() if v < retry_threshold]
+        if retry_targets:
+            retry_timeout_sec = int(os.environ.get("GENAI_RETRY_TIMEOUT_SEC", "90"))
+            retry_map = {
+                "part1": prompt1,
+                "part2": prompt2,
+                "part3": prompt3,
+                "part4": prompt4,
+            }
+            for key in retry_targets:
+                _append_report_log(report_id, f"retry_start:{key}")
+                retried = _generate_part(retry_map[key], timeout_sec=retry_timeout_sec)
+                _append_report_log(report_id, f"retry_done:{key}:{_raw_len(retried)}")
+                if key == "part1":
+                    raw_part1 = retried
+                elif key == "part2":
+                    raw_part2 = retried
+                elif key == "part3":
+                    raw_part3 = retried
+                elif key == "part4":
+                    raw_part4 = retried
+
+        _append_report_log(report_id, "generation_done")
+        # --- Process Part 1 ---
+        part1 = clean_markdown(raw_part1)
+        part1 = remove_part_labels(part1)
+        part1 = normalize_headings(part1)
+        part1 = normalize_report_header(part1, name, ticker)
+        part1 = _inject_financial_tables(part1, financial_table, ratio_table, data_note)
+
+        # --- Process Part 2 ---
+        part2 = remove_part_labels(clean_markdown(raw_part2))
+        part2 = normalize_headings(part2)
+        part2 = normalize_part_header(part2, "제2부 (사업 모델)")
+        part2 = ensure_heading(part2, "3. 사업 모델 및 경쟁 우위")
+
+        # --- Process Part 3 ---
+        part3 = remove_part_labels(clean_markdown(raw_part3))
+        part3 = normalize_headings(part3)
+        part3 = normalize_part_header(part3, "제3부 (리스크/기회/결론)")
+        part3 = ensure_heading(part3, "4. 리스크 및 기회 요인")
+
+        # --- Process Part 4 ---
+        part4 = remove_part_labels(clean_markdown(raw_part4))
         part4 = normalize_headings(part4)
         part4 = normalize_part_header(part4, "제4부 (뉴스 인사이트)")
         part4 = ensure_heading(part4, "6. 최근 뉴스 및 인사이트")
 
+        def _meaningful_len(text: str) -> int:
+            if not text:
+                return 0
+            lines = []
+            for line in text.splitlines():
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                if stripped.startswith("#"):
+                    continue
+                if stripped.startswith("|"):
+                    continue
+                if re.match(r"^[:\\-\\s|]+$", stripped):
+                    continue
+                if re.match(r"^[-*]\\s*\\[.+\\]$", stripped):
+                    continue
+                lines.append(stripped)
+            cleaned = re.sub(r"\\s+", "", " ".join(lines))
+            return len(cleaned)
+
+        part_lengths = {
+            "part1": _meaningful_len(part1),
+            "part2": _meaningful_len(part2),
+            "part3": _meaningful_len(part3),
+            "part4": _meaningful_len(part4),
+        }
+        _append_report_log(report_id, f"part_lengths:{part_lengths}")
+
+        min_len = {
+            "part1": 200,
+            "part2": 200,
+            "part3": 200,
+            "part4": 120,
+        }
+        low_parts = [k for k, v in part_lengths.items() if v < min_len[k]]
+        if low_parts:
+            _append_report_log(report_id, f"low_content_parts:{low_parts}")
+            raise ValueError(f"AI generation returned insufficient content for: {', '.join(low_parts)}")
+
+        if not any([part1.strip(), part2.strip(), part3.strip(), part4.strip()]):
+            raise ValueError("AI generation returned empty content for all parts.")
+
         # Combine all parts
         full_report = f"{part1}\n\n{part2}\n\n{part3}\n\n{part4}\n\n{dart_filings_md}"
         full_report = remove_part_labels(full_report)
+        full_report = normalize_headings(full_report)
+        full_report = _dedupe_financial_sections(full_report)
+        full_report = _dedupe_section_heading(full_report, "## 3. 사업 모델 및 경쟁 우위")
         _validate_report_output(full_report)
         
         # 4. Save as Markdown
@@ -447,21 +623,37 @@ def generate_ai_report(company_id: int, report_id: int):
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(full_report)
         print(f"Markdown saved: {md_path}")
+        _append_report_log(report_id, f"md_saved:{md_path}")
         
         # 5. Convert to DOCX
         docx_path = os.path.join(artifacts_dir, f"report_{report_id}.docx")
         markdown_to_docx_converter(full_report, docx_path, name, ticker)
         print(f"DOCX saved: {docx_path}")
+        _append_report_log(report_id, f"docx_saved:{docx_path}")
         
         # 6. Update DB status to DONE
         db.execute(text("UPDATE report_request SET status = 'DONE' WHERE report_id = :rid"),
                   {"rid": report_id})
         db.commit()
+        _append_report_log(report_id, "done")
         
         print(f"Report {report_id} generated successfully!")
         
     except Exception as e:
         print(f"Report generation failed: {e}")
+        _append_report_log(report_id, f"failed:{e}")
+        try:
+            root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+            error_log_path = os.path.join(root_dir, "artifacts", "report_error.log")
+            with open(error_log_path, "a", encoding="utf-8") as f:
+                f.write(f"Timestamp: {datetime.datetime.now()}\n")
+                f.write(f"Report ID: {report_id}, Company ID: {company_id}\n")
+                f.write(f"Error: {str(e)}\n")
+                import traceback
+                f.write(traceback.format_exc())
+                f.write("-" * 50 + "\n")
+        except:
+            pass
         db.rollback()
         db.execute(text("UPDATE report_request SET status = 'FAILED' WHERE report_id = :rid"),
                   {"rid": report_id})
@@ -507,17 +699,16 @@ def _inject_financial_tables(markdown_text: str, financial_table: str, ratio_tab
         "",
     ])
 
-    # Replace existing 2.1~2.2 sections if present.
-    pattern = r"(?s)###\\s*2\\.1.*?(?=###\\s*2\\.3|$)"
-    if re.search(pattern, markdown_text):
-        return re.sub(pattern, block, markdown_text, count=1)
+    # Remove any existing 2.1/2.2 blocks to avoid duplication.
+    cleaned = re.sub(r"(?s)###\\s*2\\.1.*?(?=###\\s*2\\.\\d+|##\\s*3\\.|$)", "", markdown_text)
+    cleaned = re.sub(r"(?s)###\\s*2\\.2.*?(?=###\\s*2\\.\\d+|##\\s*3\\.|$)", "", cleaned)
 
     # Otherwise insert right after the 2.x main header if present.
     heading_pattern = r"(?m)^##\\s*2\\..*$"
-    if re.search(heading_pattern, markdown_text):
-        return re.sub(heading_pattern, lambda m: f"{m.group(0)}\n\n{block}", markdown_text, count=1)
+    if re.search(heading_pattern, cleaned):
+        return re.sub(heading_pattern, lambda m: f"{m.group(0)}\n\n{block}", cleaned, count=1)
 
-    return f"{markdown_text}\n\n{block}"
+    return f"{cleaned}\n\n{block}"
 
 def _safe_ratio(numerator: float | None, denominator: float | None) -> float | None:
     if numerator is None or denominator in (None, 0):
@@ -664,8 +855,10 @@ def _latest_years_for_company(db, corp_code: str | None) -> list[int]:
 
 def _candidate_years() -> list[int]:
     current_year = datetime.date.today().year
-    # Look back 8 years to ensure we find at least 3 valid years of data even if recent ones are missing or delayed
-    return [current_year - i for i in range(8)]
+    # DART annuals are typically available up to (current_year - 2).
+    base_year = current_year - 2
+    # Look back 8 years to ensure we find at least 3 valid years of data even if recent ones are missing or delayed.
+    return [base_year - i for i in range(8)]
 
 def _ensure_latest_years(db, corp_code: str, required: int = 3) -> list[int]:
     years = _latest_years_for_company(db, corp_code)
@@ -707,21 +900,34 @@ def ensure_financials_for_company(db, company_id: int, corp_code: str | None, st
         from ingest.dart_financials_loader import fetch_and_save_company_financials
         fetch_and_save_company_financials(corp_codes=[corp_code], years=years)
 
-    # Fetch only missing years for this company
-    missing_before = _missing_years(candidate_years)
-    if missing_before:
-        try:
-            _fetch_from_dart(missing_before)
-        except Exception as e:
-            print(f"DART financials fetch failed: {e}")
+    # Optimized DART fetch logic: Stop if we have 3 years of data
+    
+    # 1. Check existing years
+    existing = _existing_years(candidate_years)
+    
+    # If we already have 3 years, we can stop here.
+    if len(existing) >= 3:
+        # Check if the latest expected year is missing?
+        # For speed, we skip this if we have enough historical data.
+        # But let's be slightly robust: if we have 2021,2022,2023 but not 2024, it's okay unless user demands 2024.
+        print(f"Skipping DART fetch: Found {len(existing)} years in DB for {name_ko}.")
+        latest_years = _ensure_latest_years(db, corp_code)
+        build_marts_from_financial_statement(db, company_id, corp_code, latest_years)
+        return
 
-    # Retry remaining missing years once
-    missing_after = _missing_years(candidate_years)
-    if missing_after:
+    # 2. Fetch only missing years, but stop once we reach 3 total years
+    missing_candidates = sorted([y for y in candidate_years if y not in existing], reverse=True)
+    
+    # How many more do we need?
+    needed = 3 - len(existing)
+    to_fetch = missing_candidates[:needed + 2] # Fetch a few more just in case recent ones are empty
+    
+    if to_fetch:
         try:
-            _fetch_from_dart(missing_after)
+            print(f"Fetching missing DART years for {name_ko}: {to_fetch}")
+            _fetch_from_dart(to_fetch)
         except Exception as e:
-            print(f"DART financials retry failed: {e}")
+            print(f"DART financials fetch failed: {e}") 
 
     latest_years = _ensure_latest_years(db, corp_code)
     build_marts_from_financial_statement(db, company_id, corp_code, latest_years)
@@ -761,6 +967,8 @@ def normalize_headings(markdown_text: str) -> str:
     out = []
     for line in lines:
         raw = line.strip()
+        if raw.endswith("**") and raw.startswith("#"):
+            raw = raw[:-2].rstrip()
         if raw.startswith(("-", "*", "•")):
             candidate = raw.lstrip("-*•").strip()
             if re.match(r"^\d+(\.\d+)?\s", candidate) or any(k in candidate for k in keywords):
@@ -785,6 +993,40 @@ def normalize_headings(markdown_text: str) -> str:
             out.append(f"## {raw}")
             continue
 
+        out.append(raw if raw else line)
+    return "\n".join(out)
+
+def _dedupe_financial_sections(markdown_text: str) -> str:
+    """Remove duplicated 2.1/2.2 blocks that can appear after injection."""
+    lines = markdown_text.splitlines()
+    out = []
+    seen_21 = 0
+    skipping = False
+    for line in lines:
+        if line.startswith("### 2.1 재무상태표") or line.startswith("### 2.1 "):
+            seen_21 += 1
+            if seen_21 > 1:
+                skipping = True
+                continue
+        if skipping:
+            if line.startswith("## 3."):
+                skipping = False
+                out.append(line)
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+def _dedupe_section_heading(markdown_text: str, heading: str) -> str:
+    """Keep the first occurrence of a section heading and drop duplicates."""
+    lines = markdown_text.splitlines()
+    out = []
+    seen = False
+    for line in lines:
+        if line.startswith(heading):
+            if not seen:
+                out.append(heading)
+                seen = True
+            continue
         out.append(line)
     return "\n".join(out)
 
@@ -976,6 +1218,26 @@ def _create_table(doc, table_rows):
     
     table = doc.add_table(rows=1 + len(data_rows), cols=len(header))
     table.style = 'Light Grid Accent 1'
+    table.autofit = False
+
+    # Keep column widths consistent across tables (align 2.1 and 2.2)
+    try:
+        from docx.shared import Inches
+        total_inches = 6.27  # A4 width 8.27 - 1in margins on both sides
+        col_count = len(header)
+        if col_count >= 4:
+            first_inches = 1.8
+        else:
+            first_inches = total_inches / max(col_count, 1)
+        remaining_inches = total_inches - first_inches
+        other_inches = remaining_inches / max(col_count - 1, 1)
+        widths = [first_inches] + [other_inches] * max(col_count - 1, 0)
+        for idx, w in enumerate(widths):
+            width = Inches(w)
+            for cell in table.columns[idx].cells:
+                cell.width = width
+    except Exception:
+        pass
     
     # Header
     for i, h in enumerate(header):

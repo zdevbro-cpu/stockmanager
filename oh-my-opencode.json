@@ -1,0 +1,13 @@
+{
+  "agents": {
+    "oracle": {
+      "model": "gpt-5.2"
+    },
+    "sisyphus": {
+      "model": "gpt-5.2"
+    },
+    "frontend": {
+      "model": "gemini-3-pro-high"
+    }
+  }
+}

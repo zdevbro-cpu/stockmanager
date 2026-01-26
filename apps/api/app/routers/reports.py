@@ -4,6 +4,7 @@ from sqlalchemy import text
 import datetime
 import os
 import sys
+import threading
 
 from ..auth import get_current_user
 from ..db import get_db
@@ -97,22 +98,59 @@ def list_reports(response: Response, db: Session = Depends(get_db)):
 
 @router.get("/reports/{report_id}")
 def get_report_content(report_id: int, db: Session = Depends(get_db)):
-    stmt = text("SELECT company_id, status FROM report_request WHERE report_id = :rid")
+    stmt = text("SELECT company_id, status, created_at FROM report_request WHERE report_id = :rid")
     row = db.execute(stmt, {"rid": report_id}).fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Report not found")
     
-    company_id, status = row
-    if status != 'DONE':
-        return {"id": report_id, "status": status, "company_id": company_id, "content": f"蹂닿퀬???앹꽦 以묒엯?덈떎... (?꾩옱 ?곹깭: {status})"}
-
+    company_id, status, created_at = row
     import os
     # Use absolute path to project root
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+    md_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.md")
+    docx_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.docx")
+
+    def _artifact_is_fresh(path: str) -> bool:
+        if not os.path.exists(path):
+            return False
+        if created_at:
+            try:
+                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(path), tz=created_at.tzinfo)
+                if mtime < (created_at - datetime.timedelta(seconds=5)):
+                    return False
+            except Exception:
+                return False
+        return True
+
+    # If status didn't update but artifacts exist, treat as DONE.
+    if status != 'DONE':
+        if _artifact_is_fresh(md_path) or _artifact_is_fresh(docx_path):
+            db.execute(text("UPDATE report_request SET status = 'DONE' WHERE report_id = :rid"), {"rid": report_id})
+            db.commit()
+            status = 'DONE'
+        else:
+            return {
+                "id": report_id,
+                "status": status,
+                "company_id": company_id,
+                "content": f"보고서 생성 중입니다... (현재 상태: {status})"
+            }
     
     # Check for MD file first (new format - for preview)
-    md_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.md")
     if os.path.exists(md_path):
+        try:
+            if created_at:
+                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(md_path), tz=created_at.tzinfo)
+                if mtime < (created_at - datetime.timedelta(seconds=5)):
+                    return {
+                        "id": report_id,
+                        "status": status,
+                        "company_id": company_id,
+                        "content": "보고서 파일이 최신 상태가 아닙니다. 다시 생성해 주세요.",
+                        "format": "none"
+                    }
+        except Exception:
+            pass
         with open(md_path, "r", encoding="utf-8") as f:
             content = f.read()
 
@@ -161,17 +199,35 @@ def get_report_content(report_id: int, db: Session = Depends(get_db)):
         return {"id": report_id, "status": status, "company_id": company_id, "content": content, "format": "markdown"}
     
     # Fallback: Check for DOCX file
-    docx_path = os.path.join(root_dir, "artifacts", "reports", f"report_{report_id}.docx")
     if os.path.exists(docx_path):
+        try:
+            if created_at:
+                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(docx_path), tz=created_at.tzinfo)
+                if mtime < (created_at - datetime.timedelta(seconds=5)):
+                    return {
+                        "id": report_id,
+                        "status": status,
+                        "company_id": company_id,
+                        "content": "보고서 파일이 최신 상태가 아닙니다. 다시 생성해 주세요.",
+                        "format": "none"
+                    }
+        except Exception:
+            pass
         return {
             "id": report_id, 
             "status": status, 
             "company_id": company_id, 
-            "content": "# 蹂닿퀬??誘몃━蹂닿린 遺덇?\n\n??蹂닿퀬?쒕뒗 ?ㅼ슫濡쒕뱶 ?꾩슜 ?뺤떇(DOCX)?쇰줈 ?앹꽦?섏뿀?듬땲??\n\n?곗륫 ?곷떒??**?ㅼ슫濡쒕뱶 踰꾪듉**???대┃?섏뿬 ?뺤씤?섏꽭??",
+            "content": "# 보고서 미리보기 불가\n\n이 보고서는 다운로드 전용 형식(DOCX)으로 생성되었습니다.\n\n우측 상단의 **다운로드 버튼**을 클릭해 확인해 주세요.",
             "format": "docx"
         }
     
-    return {"id": report_id, "status": status, "company_id": company_id, "content": "蹂닿퀬???뚯씪???쒕쾭??議댁옱?섏? ?딆뒿?덈떎.", "format": "none"}
+    return {
+        "id": report_id,
+        "status": status,
+        "company_id": company_id,
+        "content": "보고서 파일이 서버에 존재하지 않습니다.",
+        "format": "none"
+    }
 
 @router.get("/reports/{report_id}/download")
 def download_report(report_id: int, db: Session = Depends(get_db)):
@@ -258,8 +314,9 @@ def create_report(req: ReportRequestCreate, background_tasks: BackgroundTasks, _
     report_id = result.fetchone()[0]
     db.commit()
 
-    # 2. Enqueue AI generation task (It will create its own session)
-    background_tasks.add_task(generate_ai_report, req.company_id, report_id)
+    # 2. Enqueue AI generation task (detach from request lifecycle)
+    thread = threading.Thread(target=generate_ai_report, args=(req.company_id, report_id), daemon=True)
+    thread.start()
 
     return {
         "report_id": report_id,

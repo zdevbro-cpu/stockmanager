@@ -6,7 +6,6 @@ import remarkGfm from 'remark-gfm';
 import { useSettings } from '../contexts/SettingsContext';
 import { createApiClient } from '../lib/apiClient';
 import DocumentManager from '../features/reports/DocumentManager';
-import { jsPDF } from 'jspdf';
 
 type Tab = 'library' | 'builder' | 'preview';
 
@@ -396,56 +395,6 @@ export default function Reports() {
         }
     };
 
-    const handlePreviewPdf = async () => {
-        const reportElement = reportRef.current;
-        if (!reportElement) return;
-
-        const clone = reportElement.cloneNode(true) as HTMLElement;
-        clone.style.width = '210mm';
-        clone.style.padding = '0';
-        clone.style.margin = '0';
-        clone.style.boxShadow = 'none';
-
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'fixed';
-        wrapper.style.left = '-9999px';
-        wrapper.style.top = '0';
-        wrapper.style.width = '210mm';
-        wrapper.style.background = '#fff';
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
-
-        try {
-            if (document.fonts?.ready) {
-                await document.fonts.ready;
-            }
-            const doc = new jsPDF({
-                orientation: 'p',
-                unit: 'mm',
-                format: 'a4',
-            });
-
-            await doc.html(clone, {
-                x: 10,
-                y: 10,
-                width: 190,
-                windowWidth: clone.scrollWidth || 800,
-                autoPaging: 'slice',
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                },
-            });
-
-            const blob = doc.output('blob');
-            const url = URL.createObjectURL(blob);
-            window.open(url, '_blank', 'noopener,noreferrer');
-            setTimeout(() => URL.revokeObjectURL(url), 60000);
-        } finally {
-            document.body.removeChild(wrapper);
-        }
-    };
-
     const handleDeleteReport = async (id: number) => {
         if (!confirm("정말로 이 보고서를 삭제하시겠습니까?")) return;
 
@@ -761,24 +710,14 @@ export default function Reports() {
                                 <span className="material-symbols-outlined text-primary">description</span>
                                 Report Preview
                             </h2>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handlePreviewPdf}
-                                    disabled={!reportContent}
-                                    className="flex items-center gap-2 text-sm text-cyan-300 hover:text-cyan-100 transition-colors bg-cyan-400/10 px-3 py-1.5 rounded-lg disabled:opacity-50"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
-                                    PDF Preview
-                                </button>
-                                <button
-                                    onClick={handleDownloadPdf}
-                                    disabled={!reportContent}
-                                    className="flex items-center gap-2 text-sm text-cyan-300 hover:text-cyan-100 transition-colors bg-cyan-400/10 px-3 py-1.5 rounded-lg disabled:opacity-50"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">print</span>
-                                    Print / PDF (Clean Print)
-                                </button>
-                            </div>
+                            <button
+                                onClick={handleDownloadPdf}
+                                disabled={!reportContent}
+                                className="flex items-center gap-2 text-sm text-cyan-300 hover:text-cyan-100 transition-colors bg-cyan-400/10 px-3 py-1.5 rounded-lg disabled:opacity-50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">print</span>
+                                Print / PDF (Clean Print)
+                            </button>
                         </div>
                         <div className="flex-1 overflow-y-auto bg-background-dark/50 rounded-lg p-0 border border-border-dark shadow-inner print:overflow-visible print:bg-white print:border-none print:shadow-none">
                             <div
